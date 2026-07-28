@@ -111,11 +111,14 @@ def main() -> int:
     outer = fig.add_gridspec(2, 1, height_ratios=[2.78, 1.0], hspace=0.34)
 
     # ---- Panel a: hero identity x scenes x controls ----
+    # Per-scene row heights track the native image aspect ratio so no image is
+    # letterboxed into a square: portrait 640^2, rain 512x768, kitchen 768x512.
+    scene_aspect = {"portrait": 1.0, "rain": 768 / 512, "kitchen": 512 / 768}
+    row_heights = [scene_aspect[s] for s, _, _ in HERO_SCENES]
     top = outer[0].subgridspec(1, 2, width_ratios=[1.02, 5.0], wspace=0.05)
-    refcol = top[0, 0].subgridspec(3, 1, hspace=0.16)
-    ax_ref = fig.add_subplot(refcol[1, 0])  # middle row -> vertically centred
+    ax_ref = fig.add_subplot(top[0, 0])  # square reference, vertically centred
     ref_path = selected_row(rows, HERO, "portrait", 2027)["reference"]
-    ax_ref.imshow(letterbox(ref_path))
+    ax_ref.imshow(Image.open(ref_path).convert("RGB"))
     ax_ref.set_xticks([]); ax_ref.set_yticks([])
     for sp in ax_ref.spines.values():
         sp.set_visible(True); sp.set_edgecolor(COLORS["ink"]); sp.set_linewidth(1.3)
@@ -123,12 +126,13 @@ def main() -> int:
     ax_ref.set_xlabel("target identity\n(dark skin, wavy\nhair, earrings)",
                       fontsize=5.6, labelpad=2, linespacing=1.0)
 
-    hero = top[0, 1].subgridspec(3, len(HERO_ARMS), wspace=0.05, hspace=0.16)
+    hero = top[0, 1].subgridspec(3, len(HERO_ARMS), wspace=0.05, hspace=0.16,
+                                 height_ratios=row_heights)
     for ri, (scene, seed, rlabel) in enumerate(HERO_SCENES):
         record = selected_row(rows, HERO, scene, seed)
         for ci, (key, title, edge, lw) in enumerate(HERO_ARMS):
             ax = fig.add_subplot(hero[ri, ci])
-            ax.imshow(letterbox(record[key]))
+            ax.imshow(Image.open(record[key]).convert("RGB"))
             ax.set_xticks([]); ax.set_yticks([])
             for sp in ax.spines.values():
                 sp.set_visible(True); sp.set_edgecolor(edge); sp.set_linewidth(lw)

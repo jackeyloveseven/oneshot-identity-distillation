@@ -37,19 +37,19 @@ COLS = [("reference", "Reference"), ("caption_base", "Attribute text"),
         ("distilled", "Distilled (ours)"), ("negative_teacher", "Wrong reference")]
 
 
-def lb(path, size=420):
-    im = Image.open(path).convert("RGB"); im.thumbnail((size, size), Image.LANCZOS)
-    c = Image.new("RGB", (size, size), (255, 255, 255)); c.paste(im, ((size-im.width)//2, (size-im.height)//2)); return c
-
+# Row heights track each row's native scene aspect so no image is squashed
+# into a square: portrait 640^2, rain 512x768 (tall), kitchen 768x512 (wide).
+SCENE_ASPECT = {"portrait": 1.0, "rain": 768 / 512, "kitchen": 512 / 768}
+row_heights = [SCENE_ASPECT[s] for (_, s, _, _) in GAL]
 
 nrow = len(GAL)
-fig = plt.figure(figsize=(7.0, nrow * 1.72), facecolor="white")
-gs = fig.add_gridspec(nrow, len(COLS), wspace=0.03, hspace=0.34)
+fig = plt.figure(figsize=(7.0, sum(row_heights) * 1.55), facecolor="white")
+gs = fig.add_gridspec(nrow, len(COLS), wspace=0.03, hspace=0.30, height_ratios=row_heights)
 for ri, (uid, scene, seed, note) in enumerate(GAL):
     r = rows[(uid, scene, seed)]
     for ci, (key, title) in enumerate(COLS):
         ax = fig.add_subplot(gs[ri, ci])
-        ax.imshow(lb(r[key])); ax.set_xticks([]); ax.set_yticks([])
+        ax.imshow(Image.open(r[key]).convert("RGB")); ax.set_xticks([]); ax.set_yticks([])
         if key == "distilled":
             cap, edge, lw, cc = f"CCIP {float(r['distilled_ccip']):.3f} ✓", BLUE, 1.8, INK
         elif key == "caption_base":
