@@ -66,7 +66,6 @@ HERO_ARMS = [
     ("caption_base", "Attribute text", "#9AA0A6", 0.8),
     ("distilled", "Distilled (ours)", COLORS["distilled"], 2.0),
     ("teacher", "Edit teacher", COLORS["teacher"], 0.8),
-    ("matched_control", "Matched recon.", COLORS["matched"], 0.8),
     ("negative_teacher", "Wrong reference", COLORS["negative"], 1.4),
 ]
 
@@ -230,8 +229,8 @@ def main() -> int:
     panel_label(ax_e, "e")
 
     fig.suptitle(
-        "One identity across three scenes with the full control set; the correct "
-        "reference drives identity, matched reconstruction only pastes it (L1$\\approx$0.03)",
+        "One identity across three re-posed scenes: the correct reference drives "
+        "identity everywhere, while a same-class wrong reference collapses it",
         x=0.5, y=0.995, fontsize=8.4, fontweight="bold")
     fig.subplots_adjust(left=0.055, right=0.997, bottom=0.075, top=0.94)
 

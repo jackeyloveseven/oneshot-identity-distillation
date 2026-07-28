@@ -101,7 +101,7 @@ def main() -> int:
     record = next(
         row
         for row in rows
-        if row["uid"] == "5064" and row["scene"] == "portrait"
+        if row["uid"] == "1070" and row["scene"] == "portrait"
     )
 
     FIG_DIR.mkdir(parents=True, exist_ok=True)
