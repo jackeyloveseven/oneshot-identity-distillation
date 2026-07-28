@@ -10,12 +10,36 @@ reference image drives an identity-preserving generation with a frozen
 text-to-image model and no per-subject training."""
 from __future__ import annotations
 import glob
+import subprocess
 from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
+
+
+def jpeg_compress_pdf(pdf: Path, dpi: int = 300, quality: int = 90) -> None:
+    """Recompress a PDF's rasters to JPEG in place via Ghostscript (no-op if
+    gs is missing). Keeps the gallery PDF small enough for the AAAI archive."""
+    tmp = pdf.with_suffix(".gs.pdf")
+    cmd = [
+        "gs", "-sDEVICE=pdfwrite", "-dCompatibilityLevel=1.5",
+        "-dNOPAUSE", "-dBATCH", "-dQUIET",
+        "-dAutoFilterColorImages=false", "-dColorImageFilter=/DCTEncode",
+        "-dDownsampleColorImages=true", "-dColorImageDownsampleType=/Bicubic",
+        f"-dColorImageResolution={dpi}",
+        "-dAutoFilterGrayImages=false", "-dGrayImageFilter=/DCTEncode",
+        "-dDownsampleGrayImages=true", f"-dGrayImageResolution={dpi}",
+        f"-dJPEGQ={quality}", f"-sOutputFile={tmp}", str(pdf),
+    ]
+    try:
+        subprocess.run(cmd, check=True)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        tmp.unlink(missing_ok=True)
+        return
+    if tmp.exists() and tmp.stat().st_size > 0:
+        tmp.replace(pdf)
 
 
 def trim_white(im):
@@ -89,4 +113,6 @@ base = FIG / "supp_gallery"
 for ext, kw in [(".pdf", {"dpi": 300}), (".svg", {"dpi": 300}), (".png", {"dpi": 200})]:
     fig.savefig(base.with_suffix(ext), bbox_inches="tight", **kw)
 plt.close(fig)
+# recompress the datafactory rasters to JPEG so the gallery PDF stays small
+jpeg_compress_pdf(base.with_suffix(".pdf"))
 print("wrote", base)

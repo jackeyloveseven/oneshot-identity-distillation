@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import csv
 import json
+import shutil
+import subprocess
 from collections import defaultdict
 from pathlib import Path
 
@@ -27,10 +29,39 @@ import numpy as np
 from PIL import Image
 
 
+def jpeg_compress_pdf(pdf: Path, dpi: int = 300, quality: int = 90) -> None:
+    """Recompress a PDF's raster images to JPEG in place via Ghostscript.
+
+    Vector text/lines are untouched; only embedded rasters are downsampled to
+    ``dpi`` and DCT (JPEG) encoded at ``quality``. No-op (leaves the original)
+    if Ghostscript is unavailable or the run fails, so figure generation never
+    hard-depends on gs.
+    """
+    tmp = pdf.with_suffix(".gs.pdf")
+    cmd = [
+        "gs", "-sDEVICE=pdfwrite", "-dCompatibilityLevel=1.5",
+        "-dNOPAUSE", "-dBATCH", "-dQUIET",
+        "-dAutoFilterColorImages=false", "-dColorImageFilter=/DCTEncode",
+        "-dDownsampleColorImages=true", "-dColorImageDownsampleType=/Bicubic",
+        f"-dColorImageResolution={dpi}",
+        "-dAutoFilterGrayImages=false", "-dGrayImageFilter=/DCTEncode",
+        "-dDownsampleGrayImages=true", f"-dGrayImageResolution={dpi}",
+        f"-dJPEGQ={quality}", f"-sOutputFile={tmp}", str(pdf),
+    ]
+    try:
+        subprocess.run(cmd, check=True)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        tmp.unlink(missing_ok=True)
+        return
+    if tmp.exists() and tmp.stat().st_size > 0:
+        tmp.replace(pdf)
+
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "out" / "krea2_tsd_eval30_tagged_v3"
 METRICS = OUT / "eval30_metrics.json"
 FIG_DIR = ROOT / "paper" / "figures"
+FIG_DIR_COPY = FIG_DIR / "fig2_results"
 
 plt.rcParams.update(
     {
@@ -55,6 +86,12 @@ COLORS = {
     "negative": "#B64342",
     "ink": "#272727",
 }
+
+# Shared type scale for panels b-e (matches the mechanism-ablation figure's
+# tick_params(width=0.8, length=3, labelsize=6.2) / annotation-label convention
+# so the two data-panel figures read as one journal-grade family).
+TICK_FS = 6.2
+ANNOT_FS = 5.8
 
 # Held-out hero identity and its three protocol scenes (one seed each).
 HERO = "4224"
@@ -106,6 +143,7 @@ def main() -> int:
     vlm = payload["vlm_summary"]["majority"]
 
     FIG_DIR.mkdir(parents=True, exist_ok=True)
+    FIG_DIR_COPY.mkdir(parents=True, exist_ok=True)
     fig = plt.figure(figsize=(9.7, 5.4), facecolor="white")
     outer = fig.add_gridspec(1, 2, width_ratios=[0.31, 0.69], wspace=0.08)
 
@@ -167,30 +205,36 @@ def main() -> int:
         ax_b.plot([index - 0.17, index + 0.17], [values.mean(), values.mean()],
                   color=COLORS["ink"], lw=1.4, zorder=4)
     ax_b.axhline(0.178, color="#767676", lw=0.8, ls="--")
-    ax_b.text(2.45, 0.183, "same-ID", fontsize=5.2, ha="right")
-    ax_b.set_xticks(positions, ["Text", "Ours", "Teacher"], rotation=18)
+    ax_b.text(2.45, 0.183, "same-ID", fontsize=ANNOT_FS, ha="right")
+    ax_b.set_xticks(positions, ["Text", "Ours", "Teacher"])
     ax_b.set_ylabel("CCIP distance ↓")
     ax_b.set_ylim(0, 0.31)
+    ax_b.tick_params(axis="both", width=0.8, length=3, labelsize=TICK_FS)
+    ax_b.tick_params(axis="x", length=0)
     panel_label(ax_b, "b")
 
     retrieval = summary["retrieval"]
     retrieval_values = [100.0 * retrieval[m]["top1"] / summary["n"] for m in methods]
     bars = ax_c.bar(positions, retrieval_values, width=0.68,
                     color=[COLORS[m] for m in methods], edgecolor="white", linewidth=0.6)
-    ax_c.bar_label(bars, labels=[f"{v:.1f}" for v in retrieval_values], padding=2, fontsize=6)
-    ax_c.set_xticks(positions, ["Text", "Ours", "Teacher"], rotation=18)
+    ax_c.bar_label(bars, labels=[f"{v:.1f}" for v in retrieval_values], padding=2, fontsize=ANNOT_FS)
+    ax_c.set_xticks(positions, ["Text", "Ours", "Teacher"])
     ax_c.set_ylim(0, 105)
     ax_c.set_ylabel("30-way Top-1 (%) ↑")
+    ax_c.tick_params(axis="both", width=0.8, length=3, labelsize=TICK_FS)
+    ax_c.tick_params(axis="x", length=0)
     panel_label(ax_c, "c")
 
     identity_values = [100.0 * vlm[m]["identity_score"] for m in methods]
     defect_values = [100.0 * vlm[m]["defect_rate"] for m in methods]
     bars = ax_d.bar(positions, identity_values, width=0.68,
                     color=[COLORS[m] for m in methods], edgecolor="white", linewidth=0.6)
-    ax_d.bar_label(bars, labels=[f"{v:.1f}" for v in identity_values], padding=2, fontsize=6)
-    ax_d.set_xticks(positions, ["Text", "Ours", "Teacher"], rotation=18)
+    ax_d.bar_label(bars, labels=[f"{v:.1f}" for v in identity_values], padding=2, fontsize=ANNOT_FS)
+    ax_d.set_xticks(positions, ["Text", "Ours", "Teacher"])
     ax_d.set_ylim(0, 105)
     ax_d.set_ylabel("VLM identity (%) ↑")
+    ax_d.tick_params(axis="both", width=0.8, length=3, labelsize=TICK_FS)
+    ax_d.tick_params(axis="x", length=0)
     panel_label(ax_d, "d")
 
     comparisons = summary["comparisons"]
@@ -199,21 +243,28 @@ def main() -> int:
                     comparisons["scene_gain_vs_caption"]["mean"],
                     comparisons["aesthetic_gain_vs_caption"]["mean"]]
     delta_colors = [COLORS["positive"] if v >= 0 else COLORS["negative"] for v in delta_values]
-    bars = ax_e.barh(np.arange(3), delta_values, color=delta_colors, height=0.62, alpha=0.88)
+    bars = ax_e.barh(np.arange(3), delta_values, color=delta_colors, height=0.62,
+                     edgecolor="white", linewidth=0.6)
     ax_e.axvline(0, color=COLORS["ink"], lw=0.8)
     ax_e.set_yticks(np.arange(3), delta_names)
     ax_e.invert_yaxis()
     ax_e.set_xlabel("Change vs attribute text")
     ax_e.set_xlim(-0.085, 0.135)
+    ax_e.tick_params(axis="both", width=0.8, length=3, labelsize=TICK_FS)
+    ax_e.tick_params(axis="y", length=0)
+    # Large-magnitude bars (|value| >= 0.02) get a centred white label inside
+    # the bar on both signs; short bars get a small outside label near the
+    # tip. Symmetric so the "Identity" bar's label stays inside the axes
+    # instead of overrunning into the margin next to the hero grid.
     for bar, value in zip(bars, delta_values):
-        if -0.02 < value < 0:
-            x_text, align, tc = value - 0.004, "right", COLORS["ink"]
-        elif value < 0:
+        if abs(value) >= 0.02:
             x_text, align, tc = value / 2, "center", "white"
+        elif value < 0:
+            x_text, align, tc = value - 0.004, "right", COLORS["ink"]
         else:
-            x_text, align, tc = value + 0.005, "left", COLORS["ink"]
+            x_text, align, tc = value + 0.004, "left", COLORS["ink"]
         ax_e.text(x_text, bar.get_y() + bar.get_height() / 2, f"{value:+.3f}",
-                  ha=align, va="center", fontsize=5.6, color=tc)
+                  ha=align, va="center", fontsize=ANNOT_FS, color=tc)
     panel_label(ax_e, "e")
 
     fig.subplots_adjust(left=0.045, right=0.996, bottom=0.065, top=0.95)
@@ -221,9 +272,13 @@ def main() -> int:
     base = FIG_DIR / "main_eval30"
     fig.savefig(base.with_suffix(".svg"), bbox_inches="tight", dpi=400)
     fig.savefig(base.with_suffix(".pdf"), bbox_inches="tight", dpi=400)
-    fig.savefig(base.with_suffix(".tiff"), dpi=600, bbox_inches="tight")
     fig.savefig(base.with_suffix(".png"), dpi=300, bbox_inches="tight")
     plt.close(fig)
+    # This figure embeds many anime hero rasters; matplotlib emits them as
+    # lossless Flate (~5 MB), which blows past the AAAI 10 MB source-archive
+    # limit. Recompress the rasters to JPEG at 300 dpi (print-grade, visually
+    # lossless) so the vector text/lines stay crisp but the file is ~0.5 MB.
+    jpeg_compress_pdf(base.with_suffix(".pdf"))
 
     # ---- source data: aggregate CCIP + hero cell provenance ----
     with (FIG_DIR / "main_eval30_source_data.csv").open("w", newline="") as handle:
@@ -254,6 +309,13 @@ def main() -> int:
                                  record.get(f"{key}_scene_clip", ""),
                                  record.get(f"{key}_retrieval_top1", ""),
                                  rule])
+
+    # keep the paper/figures/fig2_results/ provenance copy in sync.
+    for suffix in (".svg", ".pdf", ".png"):
+        shutil.copy2(base.with_suffix(suffix), FIG_DIR_COPY / f"main_eval30{suffix}")
+    for name in ("main_eval30_source_data.csv", "main_eval30_qualitative_selection.csv"):
+        shutil.copy2(FIG_DIR / name, FIG_DIR_COPY / name)
+
     print(base)
     return 0
 
