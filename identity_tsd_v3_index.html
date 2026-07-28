@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Identity TSD v3 — Evaluation Release</title>
+  <style>
+    :root {
+      --paper: #f3f1eb;
+      --ink: #172022;
+      --muted: #5d6a6c;
+      --line: #c8ceca;
+      --teal: #087b78;
+      --blue: #15569a;
+      --red: #a8443f;
+      --white: #fffefa;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Helvetica Neue", "Noto Sans", Arial, sans-serif;
+      line-height: 1.45;
+    }
+    main { width: min(1260px, calc(100% - 40px)); margin: auto; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 54px;
+      align-items: end;
+      min-height: 78vh;
+      padding: 78px 0 54px;
+      border-bottom: 1px solid var(--line);
+    }
+    .eyebrow {
+      margin: 0 0 24px;
+      color: var(--teal);
+      font: 700 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    h1 {
+      max-width: 860px;
+      margin: 0;
+      font-size: clamp(50px, 7vw, 102px);
+      line-height: .91;
+      letter-spacing: -.065em;
+    }
+    .lede {
+      max-width: 54ch;
+      margin: 30px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+    .hero aside {
+      padding: 28px 0 4px 28px;
+      border-left: 4px solid var(--teal);
+    }
+    .hero aside strong { display: block; font-size: 38px; letter-spacing: -.04em; }
+    .hero aside span { color: var(--muted); }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      margin: 0;
+      background: var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .metric { min-height: 190px; padding: 34px 24px; background: var(--white); }
+    .metric b { display: block; font-size: clamp(36px, 5vw, 64px); letter-spacing: -.055em; }
+    .metric span { color: var(--muted); }
+    .metric small { display: block; margin-top: 18px; color: var(--teal); }
+    section { padding: 72px 0; border-bottom: 1px solid var(--line); }
+    h2 { margin: 0 0 15px; font-size: clamp(34px, 4vw, 58px); letter-spacing: -.045em; }
+    .section-intro { max-width: 68ch; margin: 0 0 38px; color: var(--muted); font-size: 17px; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .card {
+      display: flex;
+      min-height: 255px;
+      padding: 26px;
+      color: inherit;
+      background: var(--white);
+      border-top: 5px solid var(--blue);
+      text-decoration: none;
+      flex-direction: column;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .card:nth-child(2) { border-color: var(--teal); }
+    .card:nth-child(3) { border-color: var(--red); }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 14px 35px #17202218; }
+    .card .number { color: var(--muted); font: 12px ui-monospace, monospace; }
+    .card h3 { margin: auto 0 10px; font-size: 27px; letter-spacing: -.025em; }
+    .card p { margin: 0; color: var(--muted); }
+    .card .arrow { margin-top: 24px; color: var(--teal); font-weight: 700; }
+    .figure {
+      width: 100%;
+      padding: 18px;
+      background: var(--white);
+      border: 1px solid var(--line);
+    }
+    .figure img { display: block; width: 100%; height: auto; }
+    .notes { display: grid; grid-template-columns: 1fr 1fr; gap: 52px; }
+    .notes h3 { margin: 0 0 12px; font-size: 25px; }
+    .notes p { margin: 0; color: var(--muted); }
+    footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 30px;
+      padding: 38px 0 64px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    footer a { color: var(--teal); }
+    @media (max-width: 850px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+      .cards, .notes { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) {
+      main { width: min(100% - 22px, 1260px); }
+      .hero { padding-top: 44px; }
+      .metrics { grid-template-columns: 1fr; }
+      h1 { font-size: 48px; }
+      footer { display: block; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Locked evaluation release · 2026-07-27</p>
+      <h1>Identity transfer, with every output visible.</h1>
+      <p class="lede">A reference-conditioned image editor supervises a text-only Krea 2 trajectory at test time. This release exposes reference IDs, attribute-text inputs, distilled outputs, direct teachers, controls, metrics, failures, and all mechanism ablations.</p>
+    </div>
+    <aside>
+      <strong>91.7%</strong>
+      <span>30-way identity retrieval, up from 42.8% for attribute text alone.</span>
+    </aside>
+  </header>
+
+  <div class="metrics" aria-label="headline results">
+    <div class="metric"><b>180</b><span>locked observations</span><small>30 identities × 3 scenes × 2 seeds</small></div>
+    <div class="metric"><b>0.0659</b><span>mean CCIP distance</span><small>0.1860 for attribute text</small></div>
+    <div class="metric"><b>93.9%</b><span>blind VLM identity score</span><small>three randomized passes</small></div>
+    <div class="metric"><b>450</b><span>mechanism outputs</span><small>15 variants, no cherry-picking</small></div>
+  </div>
+
+  <section>
+    <h2>Open the evidence</h2>
+    <p class="section-intro">The first report is the answer to “does it look like the reference?” The second asks “which mechanism prevents identity injection from breaking the image?” The paper records the equations, controls, uncertainty, and limitations.</p>
+    <div class="cards">
+      <a class="card" href="out/krea2_tsd_eval30_tagged_v3/eval30_report.html">
+        <span class="number">01 / MAIN EVALUATION</span>
+        <h3>Reference · input · output</h3>
+        <p>All 180 rows with IDs, prompts, text-only input, distilled result, teacher, wrong teacher, and reconstruction control.</p>
+        <span class="arrow">Open full gallery →</span>
+      </a>
+      <a class="card" href="out/krea2_tsd_eval30_ablations_v3/ablation_report.html">
+        <span class="number">02 / MECHANISM</span>
+        <h3>Trust-region ablations</h3>
+        <p>Every output from adaptive, fixed, global-only, unprojected, timing, normalization, anchor, statistic, and wrong-reference variants.</p>
+        <span class="arrow">Open ablation gallery →</span>
+      </a>
+      <a class="card" href="paper/main_aaai_tsd.pdf">
+        <span class="number">03 / MANUSCRIPT</span>
+        <h3>Submission draft</h3>
+        <p>One-Shot Identity Personalization by Distilling an Image Editor at Test Time.</p>
+        <span class="arrow">Open PDF →</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the data support</h2>
+    <p class="section-intro">Identity is transferred causally from the visual reference, while the base model remains responsible for scheduler steps. The result is strong but not free: scene CLIP decreases by 0.0090 and the blind audit finds a 3.9% visible-defect tail.</p>
+    <div class="figure">
+      <img src="paper/figures/main_eval30.png" alt="Main evaluation figure with references, outputs, and quantitative metrics">
+    </div>
+  </section>
+
+  <section class="notes">
+    <div>
+      <h3>Why trust regions matter</h3>
+      <p>Removing projection worsens CCIP from 0.0554 to 0.1289 on the locked subset. Raw score magnitude is similarly unstable. One inner update is weaker than three same-state reevaluations.</p>
+    </div>
+    <div>
+      <h3>What remains unsolved</h3>
+      <p>When the editor itself omits a cue, reconstruction fields can restore appearance only by importing layout. Channel-energy transport avoids gross copying but cannot reliably recover the missing identity cue.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="figure">
+      <img src="paper/figures/mechanism_ablation.png" alt="Mechanism ablation figure showing trust regions, anchors, channel statistics, and wrong-reference control">
+    </div>
+  </section>
+
+  <footer>
+    <span>Evaluation artifacts are raw outputs with no manual retouching.</span>
+    <span><a href="out/krea2_tsd_eval30_tagged_v3/eval30_metrics.json">Main metrics JSON</a> · <a href="out/krea2_tsd_eval30_ablations_v3/ablation_metrics.json">Ablation metrics JSON</a></span>
+  </footer>
+</main>
+</body>
+</html>

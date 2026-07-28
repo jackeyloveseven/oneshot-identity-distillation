@@ -1,0 +1,2744 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Krea2 TSD v3 Mechanism Ablation</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #eef1f2;
+      --surface: #f9fbfa;
+      --text: #172022;
+      --muted: #607074;
+      --line: #c8d1d2;
+      --accent: #087b78;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101719;
+        --surface: #192225;
+        --text: #eff4f4;
+        --muted: #a8b5b7;
+        --line: #344246;
+        --accent: #72cbc6;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Helvetica Neue", "Noto Sans", Arial, sans-serif;
+      line-height: 1.45;
+    }
+    main { width: min(1800px, calc(100% - 36px)); margin: auto; padding: 64px 0 100px; }
+    .hero { max-width: 1050px; padding-bottom: 56px; }
+    .eyebrow { color: var(--accent); font: 700 12px/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 18px 0; font-size: clamp(48px, 7vw, 96px); line-height: .94; letter-spacing: -.055em; }
+    .hero p { max-width: 66ch; color: var(--muted); font-size: 18px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+    table { width: 100%; border-collapse: collapse; min-width: 980px; }
+    th, td { padding: 14px 16px; text-align: right; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+    th:first-child { text-align: left; }
+    thead th { color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+    article { padding: 64px 0 24px; border-bottom: 1px solid var(--line); }
+    article header { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; }
+    article h2 { margin: 0 0 14px; font-size: 32px; letter-spacing: -.035em; }
+    article p { margin: 0; color: var(--muted); }
+    .strip { display: grid; grid-template-columns: repeat(18, minmax(170px, 1fr)); gap: 10px; overflow-x: auto; padding-bottom: 14px; }
+    figure { min-width: 0; margin: 0; }
+    img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 10px; background: var(--surface); }
+    figcaption { display: flex; justify-content: space-between; gap: 8px; padding-top: 8px; font-size: 12px; }
+    figcaption span { color: var(--muted); font-family: ui-monospace, monospace; }
+    @media (max-width: 700px) {
+      main { width: min(100% - 20px, 1800px); padding-top: 36px; }
+      h1 { font-size: 46px; }
+      article header { display: block; }
+      .strip { grid-template-columns: repeat(18, minmax(76vw, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div class="eyebrow">10 identities | 3 scenes | 1 fixed seed</div>
+    <h1>What makes identity distillation stable?</h1>
+    <p>The full method is compared against trust-region, optimization, normalization, time-window, reconstruction-anchor, channel-statistic, and wrong-reference controls. Lower CCIP is better. Every ablation output is shown; no output was selected by its score.</p>
+  </section>
+  <section class="table-wrap">
+    <table>
+      <thead><tr><th>Variant</th><th>CCIP</th><th>Gain vs text</th><th>95% subject CI</th><th>Delta vs full</th><th>ID margin</th><th>Scene CLIP</th><th>Ref CLIP</th><th>Aesthetic</th></tr></thead>
+      <tbody>
+        <tr>
+          <th>Full</th>
+          <td>0.0554</td>
+          <td>+0.1264</td>
+          <td>[+0.0937, +0.1582]</td>
+          <td>+0.0000</td>
+          <td>+0.2605</td>
+          <td>0.3630</td>
+          <td>0.8141</td>
+          <td>0.4610</td>
+        </tr>
+        <tr>
+          <th>Fixed trust</th>
+          <td>0.0698</td>
+          <td>+0.1120</td>
+          <td>[+0.0679, +0.1534]</td>
+          <td>+0.0144</td>
+          <td>+0.2518</td>
+          <td>0.3628</td>
+          <td>0.8034</td>
+          <td>0.4240</td>
+        </tr>
+        <tr>
+          <th>Global only</th>
+          <td>0.0685</td>
+          <td>+0.1134</td>
+          <td>[+0.0773, +0.1479]</td>
+          <td>+0.0130</td>
+          <td>+0.2554</td>
+          <td>0.3682</td>
+          <td>0.8021</td>
+          <td>0.4326</td>
+        </tr>
+        <tr>
+          <th>Loose trust</th>
+          <td>0.1289</td>
+          <td>+0.0529</td>
+          <td>[+0.0061, +0.0991]</td>
+          <td>+0.0735</td>
+          <td>+0.2047</td>
+          <td>0.3590</td>
+          <td>0.7498</td>
+          <td>0.3310</td>
+        </tr>
+        <tr>
+          <th>One inner</th>
+          <td>0.0624</td>
+          <td>+0.1195</td>
+          <td>[+0.0899, +0.1481]</td>
+          <td>+0.0070</td>
+          <td>+0.2508</td>
+          <td>0.3640</td>
+          <td>0.8141</td>
+          <td>0.4658</td>
+        </tr>
+        <tr>
+          <th>Global RMS</th>
+          <td>0.0564</td>
+          <td>+0.1255</td>
+          <td>[+0.0953, +0.1546]</td>
+          <td>+0.0010</td>
+          <td>+0.2588</td>
+          <td>0.3619</td>
+          <td>0.8161</td>
+          <td>0.4548</td>
+        </tr>
+        <tr>
+          <th>Raw score</th>
+          <td>0.1288</td>
+          <td>+0.0530</td>
+          <td>[+0.0322, +0.0762]</td>
+          <td>+0.0734</td>
+          <td>+0.1903</td>
+          <td>0.3679</td>
+          <td>0.7768</td>
+          <td>0.4805</td>
+        </tr>
+        <tr>
+          <th>No ref boost</th>
+          <td>0.0725</td>
+          <td>+0.1094</td>
+          <td>[+0.0776, +0.1408]</td>
+          <td>+0.0171</td>
+          <td>+0.2396</td>
+          <td>0.3584</td>
+          <td>0.7952</td>
+          <td>0.4776</td>
+        </tr>
+        <tr>
+          <th>Early only</th>
+          <td>0.0913</td>
+          <td>+0.0905</td>
+          <td>[+0.0643, +0.1181]</td>
+          <td>+0.0359</td>
+          <td>+0.2293</td>
+          <td>0.3660</td>
+          <td>0.7996</td>
+          <td>0.4585</td>
+        </tr>
+        <tr>
+          <th>Late only</th>
+          <td>0.1148</td>
+          <td>+0.0671</td>
+          <td>[+0.0483, +0.0870]</td>
+          <td>+0.0593</td>
+          <td>+0.2123</td>
+          <td>0.3619</td>
+          <td>0.7861</td>
+          <td>0.4713</td>
+        </tr>
+        <tr>
+          <th>Matched LoRA</th>
+          <td>0.2805</td>
+          <td>-0.0986</td>
+          <td>[-0.1525, -0.0513]</td>
+          <td>+0.2250</td>
+          <td>+0.0627</td>
+          <td>0.2700</td>
+          <td>0.5983</td>
+          <td>0.1413</td>
+        </tr>
+        <tr>
+          <th>Identity anchor (constant)</th>
+          <td>0.0541</td>
+          <td>+0.1277</td>
+          <td>[+0.0872, +0.1699]</td>
+          <td>-0.0013</td>
+          <td>+0.2720</td>
+          <td>0.2912</td>
+          <td>0.8509</td>
+          <td>0.2980</td>
+        </tr>
+        <tr>
+          <th>Identity anchor (late)</th>
+          <td>0.0734</td>
+          <td>+0.1085</td>
+          <td>[+0.0728, +0.1454]</td>
+          <td>+0.0179</td>
+          <td>+0.2370</td>
+          <td>0.3181</td>
+          <td>0.7955</td>
+          <td>0.3390</td>
+        </tr>
+        <tr>
+          <th>Channel statistics (constant)</th>
+          <td>0.0623</td>
+          <td>+0.1195</td>
+          <td>[+0.0836, +0.1556]</td>
+          <td>+0.0069</td>
+          <td>+0.2549</td>
+          <td>0.3638</td>
+          <td>0.8079</td>
+          <td>0.4360</td>
+        </tr>
+        <tr>
+          <th>Channel statistics (late)</th>
+          <td>0.0558</td>
+          <td>+0.1260</td>
+          <td>[+0.0918, +0.1589]</td>
+          <td>+0.0004</td>
+          <td>+0.2639</td>
+          <td>0.3627</td>
+          <td>0.8094</td>
+          <td>0.4568</td>
+        </tr>
+        <tr>
+          <th>Wrong ref</th>
+          <td>0.2138</td>
+          <td>-0.0320</td>
+          <td>[-0.0730, +0.0075]</td>
+          <td>+0.1584</td>
+          <td>-0.0448</td>
+          <td>0.3533</td>
+          <td>0.7310</td>
+          <td>0.4188</td>
+        </tr></tbody>
+    </table>
+  </section>
+  
+      <article>
+        <header>
+          <h2>u5319 / portrait</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u5319_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.167</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.041</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.044</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.054</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u5319_eval30t_portrait_s2027_640x640_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.167</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u5319_eval30t_portrait_s2027_640x640_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.070</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.041</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.141</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.098</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.071</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.139</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.311</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.038</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.027</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.048</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.030</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u5319_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.217</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u5319 / rain</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u5319_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.188</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.064</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.157</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.110</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u5319_eval30t_rain_s2027_512x768_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.245</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u5319_eval30t_rain_s2027_512x768_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.054</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.049</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.060</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.050</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.082</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.063</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.322</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.087</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.091</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.174</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.136</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u5319_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.229</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u5319 / kitchen</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u5319_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.204</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.052</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.059</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.183</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.213</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u5319_eval30t_kitchen_s2027_768x512_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.054</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.088</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.094</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.060</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.077</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.145</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.335</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.082</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.047</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.046</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.053</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u5319_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.214</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u2364 / portrait</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u2364_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.146</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.016</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.009</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.024</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u2364_eval30t_portrait_s2027_640x640_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.118</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u2364_eval30t_portrait_s2027_640x640_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.019</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.012</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.161</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.072</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.030</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.136</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.355</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.007</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.004</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.010</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.017</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u2364_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.231</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u2364 / rain</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u2364_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.221</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.051</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.078</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.072</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u2364_eval30t_rain_s2027_512x768_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.203</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u2364_eval30t_rain_s2027_512x768_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.038</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.059</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.059</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.038</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.254</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.039</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.332</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.080</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.158</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.080</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.051</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u2364_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.172</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u2364 / kitchen</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u2364_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.228</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.043</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.039</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.059</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.119</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u2364_eval30t_kitchen_s2027_768x512_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.040</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.044</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.145</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.050</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.043</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.100</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.174</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.055</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.098</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.035</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.041</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u2364_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.203</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u1391 / portrait</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u1391_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.116</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.039</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.032</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.029</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u1391_eval30t_portrait_s2027_640x640_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.129</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u1391_eval30t_portrait_s2027_640x640_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.046</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.052</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.131</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.078</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.048</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.090</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.223</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.107</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.045</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.041</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.043</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u1391_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.217</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u1391 / rain</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u1391_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.186</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.059</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.121</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.092</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u1391_eval30t_rain_s2027_512x768_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.150</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u1391_eval30t_rain_s2027_512x768_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.038</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.042</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.060</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.044</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.132</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.075</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.294</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.061</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.104</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.117</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.058</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u1391_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.394</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u1391 / kitchen</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u1391_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.182</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.058</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.064</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.065</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.063</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u1391_eval30t_kitchen_s2027_768x512_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.066</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.039</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.144</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.093</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.095</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.079</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.177</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.062</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.076</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.061</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.061</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u1391_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.289</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u1070 / portrait</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u1070_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.268</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.047</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.029</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.047</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u1070_eval30t_portrait_s2027_640x640_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.077</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u1070_eval30t_portrait_s2027_640x640_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.062</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.060</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.263</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.098</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.101</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.245</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.305</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.043</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.007</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.032</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.056</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u1070_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.227</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u1070 / rain</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u1070_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.222</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.033</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.025</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.023</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u1070_eval30t_rain_s2027_512x768_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.089</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u1070_eval30t_rain_s2027_512x768_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.094</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.048</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.099</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.037</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.117</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.136</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.326</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.065</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.074</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.028</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.028</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u1070_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.243</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u1070 / kitchen</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u1070_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.240</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.132</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.094</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.077</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.105</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u1070_eval30t_kitchen_s2027_768x512_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.099</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.094</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.155</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.129</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.192</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.126</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.240</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.066</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.124</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.073</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.084</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u1070_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.318</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u4977 / portrait</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u4977_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.236</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.194</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.187</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.184</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u4977_eval30t_portrait_s2027_640x640_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.105</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u4977_eval30t_portrait_s2027_640x640_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.189</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.187</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.221</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.203</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.196</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.206</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.274</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.097</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.170</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.178</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.145</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u4977_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.206</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u4977 / rain</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u4977_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.166</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.050</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.075</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.060</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u4977_eval30t_rain_s2027_512x768_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.086</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u4977_eval30t_rain_s2027_512x768_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.063</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.053</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.153</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.053</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.098</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.160</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.355</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.038</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.152</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.076</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.067</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u4977_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.153</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u4977 / kitchen</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u4977_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.229</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.055</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.053</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.049</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.067</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u4977_eval30t_kitchen_s2027_768x512_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.070</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.056</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.197</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.075</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.090</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.200</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.269</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.050</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.077</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.045</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.044</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u4977_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.211</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u5064 / portrait</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u5064_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.342</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.221</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.181</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.186</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u5064_eval30t_portrait_s2027_640x640_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.182</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u5064_eval30t_portrait_s2027_640x640_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.259</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.241</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.342</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.242</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.265</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.327</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.293</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.039</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.113</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.251</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.235</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u5064_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.311</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u5064 / rain</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u5064_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.306</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.052</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.063</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.077</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u5064_eval30t_rain_s2027_512x768_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.108</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u5064_eval30t_rain_s2027_512x768_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.098</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.069</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.241</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.087</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.143</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.208</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.311</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.051</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.185</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.057</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.060</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u5064_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.217</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u5064 / kitchen</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u5064_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.341</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.089</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.076</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.205</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.241</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u5064_eval30t_kitchen_s2027_768x512_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.085</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.080</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.357</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.092</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.118</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.262</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.335</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.115</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.057</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.065</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.082</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u5064_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.230</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u9993 / portrait</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u9993_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.127</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.041</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.053</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.047</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u9993_eval30t_portrait_s2027_640x640_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.067</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u9993_eval30t_portrait_s2027_640x640_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.051</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.042</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.086</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.075</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.043</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.075</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.097</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.052</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.037</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.052</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.036</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.145</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u9993 / rain</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u9993_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.132</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.033</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.036</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.046</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u9993_eval30t_rain_s2027_512x768_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.147</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u9993_eval30t_rain_s2027_512x768_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.056</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.040</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.092</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.053</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.065</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.069</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.111</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.074</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.131</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.046</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.040</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u9993_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.168</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u9993 / kitchen</h2>
+          <p>woman | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u9993_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.094</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.031</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.044</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.020</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.104</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u9993_eval30t_kitchen_s2027_768x512_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.020</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.018</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.057</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.037</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.062</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.069</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.209</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.042</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.050</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.017</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.022</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u9993_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.129</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u6456 / portrait</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u6456_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.132</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.014</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.020</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.014</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u6456_eval30t_portrait_s2027_640x640_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.084</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u6456_eval30t_portrait_s2027_640x640_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.026</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.013</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.080</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.040</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.029</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.094</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.308</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.008</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.011</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.015</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.014</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u6456_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.114</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u6456 / rain</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u6456_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.191</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.035</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.119</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.037</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u6456_eval30t_rain_s2027_512x768_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.176</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u6456_eval30t_rain_s2027_512x768_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.047</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.072</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.062</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.037</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.043</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.057</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.286</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.039</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.078</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.040</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.034</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u6456_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.200</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u6456 / kitchen</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u6456_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.289</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.032</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.034</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.024</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.027</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u6456_eval30t_kitchen_s2027_768x512_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.033</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.034</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.085</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.047</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.038</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.073</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.225</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.049</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.022</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.035</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.030</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u6456_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.220</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u2407 / portrait</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u2407_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.086</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.038</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.032</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.028</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u2407_eval30t_portrait_s2027_640x640_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.092</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u2407_eval30t_portrait_s2027_640x640_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.034</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.028</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.081</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.080</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.090</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.063</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.356</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.011</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.028</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.058</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.032</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u2407_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.254</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u2407 / rain</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u2407_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.121</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.023</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.058</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.024</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u2407_eval30t_rain_s2027_512x768_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.239</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u2407_eval30t_rain_s2027_512x768_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.037</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.029</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.091</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.055</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.072</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.048</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.367</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.029</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.058</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.034</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.028</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u2407_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.196</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u2407 / kitchen</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u2407_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.114</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.034</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.037</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.051</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.087</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u2407_eval30t_kitchen_s2027_768x512_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.066</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.032</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.100</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.096</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.084</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.093</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.323</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.053</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.068</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.044</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.044</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u2407_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.261</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u4017 / portrait</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u4017_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.057</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.022</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.038</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.044</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u4017_eval30t_portrait_s2027_640x640_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.023</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u4017_eval30t_portrait_s2027_640x640_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.005</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.013</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.040</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.015</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.022</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.019</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.357</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.005</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.010</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.023</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.016</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u4017_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.116</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u4017 / rain</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u4017_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.026</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.024</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.098</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.072</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u4017_eval30t_rain_s2027_512x768_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.221</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u4017_eval30t_rain_s2027_512x768_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.020</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.025</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.014</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.015</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.014</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.015</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.386</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.054</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.047</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.053</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.047</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u4017_eval30t_rain_s2027_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.184</span></figcaption>
+      </figure>
+        </div>
+      </article>
+      <article>
+        <header>
+          <h2>u4017 / kitchen</h2>
+          <p>man | seed 2027</p>
+        </header>
+        <div class="strip">
+          
+      <figure>
+        <img src="../krea2_eval30_refs/u4017_identity.png" alt="Reference" loading="lazy">
+        <figcaption><strong>Reference</strong><span>0.000</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_caption_base.png" alt="Text-only input" loading="lazy">
+        <figcaption><strong>Text-only input</strong><span>0.096</span></figcaption>
+      </figure>
+          
+      <figure>
+        <img src="../krea2_tsd_eval30_tagged_v3/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_distilled.png" alt="Full" loading="lazy">
+        <figcaption><strong>Full</strong><span>0.038</span></figcaption>
+      </figure>
+      <figure>
+        <img src="fixed_trust/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Fixed trust" loading="lazy">
+        <figcaption><strong>Fixed trust</strong><span>0.139</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_only/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l10_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global only" loading="lazy">
+        <figcaption><strong>Global only</strong><span>0.052</span></figcaption>
+      </figure>
+      <figure>
+        <img src="loose_trust/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g10_l10_a0_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Loose trust" loading="lazy">
+        <figcaption><strong>Loose trust</strong><span>0.133</span></figcaption>
+      </figure>
+      <figure>
+        <img src="one_inner/u4017_eval30t_kitchen_s2027_768x512_i1_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="One inner" loading="lazy">
+        <figcaption><strong>One inner</strong><span>0.035</span></figcaption>
+      </figure>
+      <figure>
+        <img src="global_rms/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_raw_dcap_roifull_o1_cnone_distilled.png" alt="Global RMS" loading="lazy">
+        <figcaption><strong>Global RMS</strong><span>0.028</span></figcaption>
+      </figure>
+      <figure>
+        <img src="raw_score/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_none_raw_dcap_roifull_o1_cnone_distilled.png" alt="Raw score" loading="lazy">
+        <figcaption><strong>Raw score</strong><span>0.053</span></figcaption>
+      </figure>
+      <figure>
+        <img src="no_ref_boost/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb1_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="No ref boost" loading="lazy">
+        <figcaption><strong>No ref boost</strong><span>0.026</span></figcaption>
+      </figure>
+      <figure>
+        <img src="early_window/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Early only" loading="lazy">
+        <figcaption><strong>Early only</strong><span>0.024</span></figcaption>
+      </figure>
+      <figure>
+        <img src="late_window/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Late only" loading="lazy">
+        <figcaption><strong>Late only</strong><span>0.032</span></figcaption>
+      </figure>
+      <figure>
+        <img src="matched_lora/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_matched_lora_dcap_roifull_o1_cnone_distilled.png" alt="Matched LoRA" loading="lazy">
+        <figcaption><strong>Matched LoRA</strong><span>0.158</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_const/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.25p0_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (constant)" loading="lazy">
+        <figcaption><strong>Identity anchor (constant)</strong><span>0.062</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_anchor_late/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_anchor0.4p2_dcap_roifull_o1_cnone_distilled.png" alt="Identity anchor (late)" loading="lazy">
+        <figcaption><strong>Identity anchor (late)</strong><span>0.049</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_const/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.5p0c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (constant)" loading="lazy">
+        <figcaption><strong>Channel statistics (constant)</strong><span>0.035</span></figcaption>
+      </figure>
+      <figure>
+        <img src="identity_stat_late/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png" alt="Channel statistics (late)" loading="lazy">
+        <figcaption><strong>Channel statistics (late)</strong><span>0.042</span></figcaption>
+      </figure>
+      <figure>
+        <img src="wrong_ref_same_text/u4017_eval30t_kitchen_s2027_768x512_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_dcap_roifull_o1_cnone_distilled.png" alt="Wrong ref" loading="lazy">
+        <figcaption><strong>Wrong ref</strong><span>0.146</span></figcaption>
+      </figure>
+        </div>
+      </article>
+</main>
+</body>
+</html>

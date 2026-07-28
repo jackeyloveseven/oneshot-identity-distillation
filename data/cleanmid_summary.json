@@ -1,0 +1,186 @@
+{
+  "_meta": {
+    "purpose": "confound-free mid (run_mix2/step_4000: mix3 manifest + raw prompt_B) vs published confounded mid (run_mix1/step_4000: mix2 manifest, prefix protocol on rep30) and vs fresh mid ho30 (run_mix1, prefix-free)",
+    "recipe_verification": "run_mix2 == ablation-arm recipe: band 10-25 r8 alpha8, lr 1e-4 constant (no scheduler -> step-4000 state independent of 6000-step plan), bs 4, uniform-t, train_manifest_mix3.jsonl 5936 rows, single continuous run",
+    "boot_n": 20000,
+    "boot_seed": 2026,
+    "wilson_z": 1.96
+  },
+  "arms": {
+    "published_mid_rep30": {
+      "file": "gemini_judge_devprobe_base_rep30_step4000.json",
+      "per_image": {
+        "n": 60,
+        "judge_errors": 3,
+        "clean_yes": {
+          "k": 13,
+          "pct_ci": [
+            21.666666666666668,
+            13.122921046407015,
+            33.62026834734252
+          ]
+        },
+        "defect": {
+          "k": 2,
+          "pct_ci": [
+            3.3333333333333335,
+            0.9189126490150246,
+            11.363987528925378
+          ]
+        },
+        "clean_usable": {
+          "k": 33,
+          "pct_ci": [
+            55.00000000000001,
+            42.4917145489815,
+            66.90654614623918
+          ]
+        }
+      },
+      "clustered_defect": {
+        "n_subjects": 30,
+        "any_defect_k": 2,
+        "point_pct": 6.666666666666667,
+        "ci95_pct": [
+          0.0,
+          16.666666666666668
+        ],
+        "incomplete_subjects": []
+      }
+    },
+    "fresh_mid_ho30": {
+      "file": "gemini_judge_ho30_band_10-25_r8_step4000.json",
+      "per_image": {
+        "n": 60,
+        "judge_errors": 1,
+        "clean_yes": {
+          "k": 11,
+          "pct_ci": [
+            18.333333333333332,
+            10.557689037136129,
+            29.919993226466286
+          ]
+        },
+        "defect": {
+          "k": 12,
+          "pct_ci": [
+            20.0,
+            11.828389736858965,
+            31.782046091817012
+          ]
+        },
+        "clean_usable": {
+          "k": 32,
+          "pct_ci": [
+            53.333333333333336,
+            40.893208671135106,
+            65.372298459012
+          ]
+        }
+      },
+      "clustered_defect": {
+        "n_subjects": 30,
+        "any_defect_k": 11,
+        "point_pct": 36.666666666666664,
+        "ci95_pct": [
+          20.0,
+          53.333333333333336
+        ],
+        "incomplete_subjects": []
+      }
+    },
+    "cleanmid_rep30": {
+      "file": "gemini_judge_cleanmid_rep30_band_10-25_r8_step4000.json",
+      "per_image": {
+        "n": 60,
+        "judge_errors": 0,
+        "clean_yes": {
+          "k": 12,
+          "pct_ci": [
+            20.0,
+            11.828389736858965,
+            31.782046091817012
+          ]
+        },
+        "defect": {
+          "k": 18,
+          "pct_ci": [
+            30.0,
+            19.89801025272689,
+            42.50894696639042
+          ]
+        },
+        "clean_usable": {
+          "k": 25,
+          "pct_ci": [
+            41.66666666666667,
+            30.064086487871833,
+            54.27214568676039
+          ]
+        }
+      },
+      "clustered_defect": {
+        "n_subjects": 30,
+        "any_defect_k": 16,
+        "point_pct": 53.333333333333336,
+        "ci95_pct": [
+          36.666666666666664,
+          70.0
+        ],
+        "incomplete_subjects": []
+      }
+    },
+    "cleanmid_ho30": {
+      "file": "gemini_judge_cleanmid_ho30_band_10-25_r8_step4000.json",
+      "per_image": {
+        "n": 60,
+        "judge_errors": 1,
+        "clean_yes": {
+          "k": 14,
+          "pct_ci": [
+            23.333333333333332,
+            14.43943161843107,
+            35.436511340392016
+          ]
+        },
+        "defect": {
+          "k": 16,
+          "pct_ci": [
+            26.666666666666668,
+            17.132496487078853,
+            39.00895360189135
+          ]
+        },
+        "clean_usable": {
+          "k": 31,
+          "pct_ci": [
+            51.66666666666667,
+            39.30759485084357,
+            63.82515871422999
+          ]
+        }
+      },
+      "clustered_defect": {
+        "n_subjects": 30,
+        "any_defect_k": 14,
+        "point_pct": 46.666666666666664,
+        "ci95_pct": [
+          30.0,
+          63.333333333333336
+        ],
+        "incomplete_subjects": []
+      }
+    }
+  },
+  "verdicts": {
+    "cleanmid_rep30_defect_pct": 30.0,
+    "published_mid_rep30_defect_pct": 3.3333333333333335,
+    "cleanmid_rep30_within_3_7pct": false,
+    "cleanmid_vs_published_clustered_overlap": false,
+    "confound_verdict": "ADVANTAGE SUBSTANTIALLY CONFOUND ARTIFACT (clean-mid rep30 defect >> published 3.3%, clustered CIs disjoint)",
+    "cleanmid_vs_published_cleanyes_perimage_overlap": true,
+    "cleanmid_ho30_defect_pct": 26.666666666666668,
+    "fresh_mid_ho30_defect_pct": 20.0,
+    "cleanmid_vs_freshmid_ho30_clustered_overlap": true
+  }
+}

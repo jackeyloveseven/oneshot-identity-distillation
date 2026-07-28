@@ -1,0 +1,183 @@
+{
+  "source": "gemini31pro_threearm_summary.json",
+  "definition": "single-pass blinded VLM evaluation; not human evaluation",
+  "model": "Gemini 3.1 Pro (single-pass project judge)",
+  "passes": 1,
+  "agreement": null,
+  "bootstrap": {
+    "unit": "subject",
+    "subjects": 30,
+    "seeds_per_subject": 2,
+    "n": 50000,
+    "seed": 20260722
+  },
+  "interpretation": {
+    "inference_scope": "Failure to detect a paired difference is not evidence of equivalence.",
+    "pareto_rule": "A strict detected improvement requires higher clean-yes or clean-usable and lower defect, with paired 95% intervals excluding zero in the favorable direction."
+  },
+  "arms": {
+    "strip": {
+      "clean_yes": {
+        "rate": 0.13333333333333333,
+        "ci95": [
+          0.05,
+          0.25
+        ]
+      },
+      "defect": {
+        "rate": 0.2,
+        "ci95": [
+          0.1,
+          0.31666666666666665
+        ]
+      },
+      "clean_usable": {
+        "rate": 0.5333333333333333,
+        "ci95": [
+          0.36666666666666664,
+          0.7
+        ]
+      }
+    },
+    "krea2": {
+      "clean_yes": {
+        "rate": 0.3333333333333333,
+        "ci95": [
+          0.18333333333333332,
+          0.5
+        ]
+      },
+      "defect": {
+        "rate": 0.016666666666666666,
+        "ci95": [
+          0.0,
+          0.05
+        ]
+      },
+      "clean_usable": {
+        "rate": 0.5833333333333334,
+        "ci95": [
+          0.43333333333333335,
+          0.7333333333333333
+        ]
+      }
+    },
+    "band_lora_step6000": {
+      "clean_yes": {
+        "rate": 0.4166666666666667,
+        "ci95": [
+          0.26666666666666666,
+          0.5666666666666667
+        ]
+      },
+      "defect": {
+        "rate": 0.13333333333333333,
+        "ci95": [
+          0.06666666666666667,
+          0.21666666666666667
+        ]
+      },
+      "clean_usable": {
+        "rate": 0.7666666666666667,
+        "ci95": [
+          0.65,
+          0.8833333333333333
+        ]
+      }
+    }
+  },
+  "paired_differences": {
+    "strip_minus_krea2": {
+      "clean_yes": {
+        "difference": -0.2,
+        "ci95": [
+          -0.3333333333333333,
+          -0.08333333333333333
+        ],
+        "bootstrap_p_two_sided": 0.00024,
+        "detected_direction": "negative"
+      },
+      "defect": {
+        "difference": 0.18333333333333332,
+        "ci95": [
+          0.06666666666666667,
+          0.3
+        ],
+        "bootstrap_p_two_sided": 0.00164,
+        "detected_direction": "positive"
+      },
+      "clean_usable": {
+        "difference": -0.05,
+        "ci95": [
+          -0.25,
+          0.15
+        ],
+        "bootstrap_p_two_sided": 0.68052,
+        "detected_direction": "none"
+      }
+    },
+    "strip_minus_band_lora_step6000": {
+      "clean_yes": {
+        "difference": -0.2833333333333333,
+        "ci95": [
+          -0.45,
+          -0.13333333333333333
+        ],
+        "bootstrap_p_two_sided": 0.00032,
+        "detected_direction": "negative"
+      },
+      "defect": {
+        "difference": 0.06666666666666667,
+        "ci95": [
+          -0.06666666666666667,
+          0.2
+        ],
+        "bootstrap_p_two_sided": 0.39948,
+        "detected_direction": "none"
+      },
+      "clean_usable": {
+        "difference": -0.23333333333333334,
+        "ci95": [
+          -0.43333333333333335,
+          -0.03333333333333333
+        ],
+        "bootstrap_p_two_sided": 0.02736,
+        "detected_direction": "negative"
+      }
+    },
+    "krea2_minus_band_lora_step6000": {
+      "clean_yes": {
+        "difference": -0.08333333333333333,
+        "ci95": [
+          -0.21666666666666667,
+          0.05
+        ],
+        "bootstrap_p_two_sided": 0.28704,
+        "detected_direction": "none"
+      },
+      "defect": {
+        "difference": -0.11666666666666667,
+        "ci95": [
+          -0.2,
+          -0.03333333333333333
+        ],
+        "bootstrap_p_two_sided": 0.01232,
+        "detected_direction": "negative"
+      },
+      "clean_usable": {
+        "difference": -0.18333333333333332,
+        "ci95": [
+          -0.36666666666666664,
+          0.0
+        ],
+        "bootstrap_p_two_sided": 0.07412,
+        "detected_direction": "none"
+      }
+    }
+  },
+  "methods_retained": [
+    "strip",
+    "krea2",
+    "band_lora_step6000"
+  ]
+}

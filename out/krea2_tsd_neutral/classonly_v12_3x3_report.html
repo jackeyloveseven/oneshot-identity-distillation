@@ -1,0 +1,1007 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A 3 by 3 audit of class-only identity injection with trust-region score distillation">
+  <title>Krea2 Class-only Identity Score Distillation | 3x3 Audit</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f3f5f4;
+      --surface: #e8ecea;
+      --surface-strong: #dde3e0;
+      --text: #16201d;
+      --muted: #596762;
+      --line: #c7d0cc;
+      --accent: #08766e;
+      --accent-soft: #cee6e1;
+      --radius: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101715;
+        --surface: #18221f;
+        --surface-strong: #202c28;
+        --text: #edf3f0;
+        --muted: #a7b5b0;
+        --line: #35423e;
+        --accent: #65c8bd;
+        --accent-soft: #173c38;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Helvetica Neue", "Noto Sans SC", Arial, sans-serif;
+      font-feature-settings: "tnum";
+      line-height: 1.5;
+    }
+    main {
+      width: min(1500px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 36px 0 96px;
+    }
+    .hero {
+      min-height: min(660px, calc(100dvh - 36px));
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr);
+      align-items: end;
+      gap: 64px;
+      padding: 44px 0 48px;
+      border-bottom: 1px solid var(--line);
+    }
+    .eyebrow {
+      color: var(--accent);
+      font: 700 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    h1 {
+      max-width: 900px;
+      margin: 18px 0 20px;
+      font-size: clamp(48px, 7vw, 104px);
+      line-height: .94;
+      letter-spacing: -.055em;
+    }
+    .hero-copy {
+      max-width: 62ch;
+      margin: 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1px;
+      margin: 0;
+      background: var(--line);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .summary div {
+      min-height: 116px;
+      padding: 20px;
+      background: var(--surface);
+    }
+    dt {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+    }
+    dd {
+      margin: 8px 0 0;
+      font-size: clamp(26px, 3vw, 41px);
+      font-weight: 650;
+      letter-spacing: -.04em;
+    }
+    .method {
+      display: grid;
+      grid-template-columns: minmax(280px, .7fr) minmax(0, 1.3fr);
+      gap: 64px;
+      padding: 72px 0 80px;
+    }
+    .method h2, .identity-heading h2 {
+      margin: 0;
+      font-size: clamp(34px, 5vw, 64px);
+      letter-spacing: -.045em;
+      line-height: 1;
+    }
+    .method-copy {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 30px;
+      color: var(--muted);
+    }
+    .method-copy p { margin: 0; }
+    code {
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 3px 7px;
+      border-radius: 6px;
+    }
+    .identity-section {
+      padding: 64px 0 24px;
+      border-top: 1px solid var(--line);
+    }
+    .identity-heading {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 40px;
+      align-items: end;
+      margin-bottom: 36px;
+    }
+    .identity-heading p {
+      max-width: 60ch;
+      margin: 16px 0 0;
+      color: var(--muted);
+    }
+    .identity-heading dl {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(112px, 1fr));
+      gap: 28px;
+      margin: 0;
+    }
+    .identity-heading dd { font-size: 27px; }
+    .comparison { margin-bottom: 68px; }
+    .comparison > header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 24px;
+      margin-bottom: 14px;
+    }
+    .comparison h3 { margin: 0; font-size: 20px; }
+    .comparison header p {
+      margin: 0;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .comparison header span { color: var(--accent); }
+    .gate {
+      margin-left: 14px;
+      color: var(--accent);
+      font-size: 12px;
+      letter-spacing: .07em;
+    }
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+    figure { min-width: 0; margin: 0; }
+    .image-frame {
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      border-radius: var(--radius);
+      background: var(--surface-strong);
+    }
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    figcaption {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 2px 0;
+      font-size: 13px;
+    }
+    figcaption span { color: var(--muted); text-align: right; }
+    .control-line {
+      margin: 12px 2px 0;
+      color: var(--muted);
+      font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .metrics { padding: 72px 0 24px; border-top: 1px solid var(--line); }
+    .metrics h2 {
+      margin: 0 0 24px;
+      font-size: 38px;
+      letter-spacing: -.035em;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 13px 16px;
+      text-align: right;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+    th:first-child, td:first-child { text-align: left; }
+    tr:last-child td { border-bottom: 0; }
+    th { color: var(--muted); font-weight: 500; }
+    td.best { color: var(--accent); font-weight: 700; }
+    .footnote {
+      max-width: 86ch;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+    @media (max-width: 940px) {
+      main { width: min(100% - 24px, 1500px); padding-top: 20px; }
+      .hero { min-height: auto; grid-template-columns: 1fr; padding: 48px 0; }
+      h1 { font-size: clamp(46px, 16vw, 76px); }
+      .method { grid-template-columns: 1fr; gap: 28px; }
+      .identity-heading { grid-template-columns: 1fr; align-items: start; }
+      .image-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 28px 10px;
+      }
+    }
+    @media (max-width: 540px) {
+      .summary, .identity-heading dl, .method-copy { grid-template-columns: 1fr; }
+      .summary div { min-height: 94px; }
+      .image-grid { grid-template-columns: 1fr; }
+      .comparison > header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Krea2 v1.2 / 3 identities × 3 seeds</div>
+      <h1>Class-only identity score distillation.</h1>
+      <p class="hero-copy">Trust-region TSD 将平均 CCIP 从 0.2778 降至 0.1514，同时保持 scene CLIP 0.358→0.361。9/9 更接近正确参考，严格阈值通过 6/9。本页是机制 pilot，不宣称广义 SOTA。</p>
+    </div>
+    <dl class="summary">
+      <div><dt>CCIP mean ↓</dt><dd>0.1514</dd></div>
+      <div><dt>Scene CLIP ↑</dt><dd>0.361</dd></div>
+      <div><dt>Strict gate</dt><dd>6/9</dd></div>
+      <div><dt>Correct ref closer</dt><dd>9/9</dd></div>
+    </dl>
+  </section>
+
+  <section class="method">
+    <h2>Locked mechanism</h2>
+    <div class="method-copy">
+      <p>每个外层去噪步先由 base 前进。随后在同一 latent 和 timestep 重算 base 与 reference-conditioned teacher，teacher 不进入 distilled scheduler。</p>
+      <p><code>Δs = -(1-σ)/σ · (vT-vB)</code>。逐 token RMS 归一化后构造 detached x0 伪目标，做 3 次内循环更新，并投影到自适应 trust region。</p>
+    </div>
+  </section>
+
+  
+      <section class="identity-section" id="u4229">
+        <div class="identity-heading">
+          <div>
+            <h2>u4229</h2>
+            <p>三个固定 seed，共享 class-only 场景提示与全部算法参数。</p>
+          </div>
+          <dl>
+            <div><dt>Distilled mean</dt><dd>0.1998</dd></div>
+            <div><dt>Specificity</dt><dd>+0.1253</dd></div>
+            <div><dt>Pass</dt><dd>1/3</dd></div>
+          </dl>
+        </div>
+        
+          <article class="comparison">
+            <header>
+              <h3>Seed 777</h3>
+              <p>
+                Base 0.3044
+                <span>→</span>
+                Distilled 0.2211
+                <b class="gate">FAIL</b>
+              </p>
+            </header>
+            <div class="image-grid">
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/896">
+                  <img src="report_u4229_reference.png" alt="Reference ID" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Reference ID</strong>
+                  <span>512 × 896</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/896">
+                  <img src="u4229_classonly_v12_ar_s777_512x896_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Input / Base</strong>
+                  <span>CCIP 0.3044</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/896">
+                  <img src="u4229_classonly_v12_ar_s777_512x896_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Distilled output</strong>
+                  <span>CCIP 0.2211</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/896">
+                  <img src="u4229_classonly_v12_ar_s777_512x896_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Direct teacher</strong>
+                  <span>CCIP 0.1947</span>
+                </figcaption>
+              </figure>
+            </div>
+            <p class="control-line">
+              Wrong-ID distance 0.3237;
+              specificity margin +0.1025;
+              head CCIP 0.2121;
+              scene CLIP 0.351.
+            </p>
+          </article>
+          <article class="comparison">
+            <header>
+              <h3>Seed 778</h3>
+              <p>
+                Base 0.3917
+                <span>→</span>
+                Distilled 0.2041
+                <b class="gate">FAIL</b>
+              </p>
+            </header>
+            <div class="image-grid">
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/896">
+                  <img src="report_u4229_reference.png" alt="Reference ID" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Reference ID</strong>
+                  <span>512 × 896</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/896">
+                  <img src="u4229_classonly_v12_ar_s778_512x896_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Input / Base</strong>
+                  <span>CCIP 0.3917</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/896">
+                  <img src="u4229_classonly_v12_ar_s778_512x896_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Distilled output</strong>
+                  <span>CCIP 0.2041</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/896">
+                  <img src="u4229_classonly_v12_ar_s778_512x896_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Direct teacher</strong>
+                  <span>CCIP 0.1957</span>
+                </figcaption>
+              </figure>
+            </div>
+            <p class="control-line">
+              Wrong-ID distance 0.3190;
+              specificity margin +0.1149;
+              head CCIP 0.2369;
+              scene CLIP 0.367.
+            </p>
+          </article>
+          <article class="comparison">
+            <header>
+              <h3>Seed 779</h3>
+              <p>
+                Base 0.3885
+                <span>→</span>
+                Distilled 0.1742
+                <b class="gate">PASS</b>
+              </p>
+            </header>
+            <div class="image-grid">
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/896">
+                  <img src="report_u4229_reference.png" alt="Reference ID" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Reference ID</strong>
+                  <span>512 × 896</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/896">
+                  <img src="u4229_classonly_v12_ar_s779_512x896_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Input / Base</strong>
+                  <span>CCIP 0.3885</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/896">
+                  <img src="u4229_classonly_v12_ar_s779_512x896_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Distilled output</strong>
+                  <span>CCIP 0.1742</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/896">
+                  <img src="u4229_classonly_v12_ar_s779_512x896_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Direct teacher</strong>
+                  <span>CCIP 0.2358</span>
+                </figcaption>
+              </figure>
+            </div>
+            <p class="control-line">
+              Wrong-ID distance 0.3327;
+              specificity margin +0.1585;
+              head CCIP 0.2211;
+              scene CLIP 0.351.
+            </p>
+          </article>
+      </section>
+      <section class="identity-section" id="u1839">
+        <div class="identity-heading">
+          <div>
+            <h2>u1839</h2>
+            <p>三个固定 seed，共享 class-only 场景提示与全部算法参数。</p>
+          </div>
+          <dl>
+            <div><dt>Distilled mean</dt><dd>0.1340</dd></div>
+            <div><dt>Specificity</dt><dd>+0.2910</dd></div>
+            <div><dt>Pass</dt><dd>2/3</dd></div>
+          </dl>
+        </div>
+        
+          <article class="comparison">
+            <header>
+              <h3>Seed 777</h3>
+              <p>
+                Base 0.1978
+                <span>→</span>
+                Distilled 0.2058
+                <b class="gate">FAIL</b>
+              </p>
+            </header>
+            <div class="image-grid">
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/768">
+                  <img src="report_u1839_reference.png" alt="Reference ID" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Reference ID</strong>
+                  <span>512 × 768</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/768">
+                  <img src="u1839_classonly_v12_ar_s777_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Input / Base</strong>
+                  <span>CCIP 0.1978</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/768">
+                  <img src="u1839_classonly_v12_ar_s777_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Distilled output</strong>
+                  <span>CCIP 0.2058</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/768">
+                  <img src="u1839_classonly_v12_ar_s777_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Direct teacher</strong>
+                  <span>CCIP 0.2007</span>
+                </figcaption>
+              </figure>
+            </div>
+            <p class="control-line">
+              Wrong-ID distance 0.3896;
+              specificity margin +0.1839;
+              head CCIP 0.1951;
+              scene CLIP 0.353.
+            </p>
+          </article>
+          <article class="comparison">
+            <header>
+              <h3>Seed 778</h3>
+              <p>
+                Base 0.1539
+                <span>→</span>
+                Distilled 0.0607
+                <b class="gate">PASS</b>
+              </p>
+            </header>
+            <div class="image-grid">
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/768">
+                  <img src="report_u1839_reference.png" alt="Reference ID" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Reference ID</strong>
+                  <span>512 × 768</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/768">
+                  <img src="u1839_classonly_v12_ar_s778_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Input / Base</strong>
+                  <span>CCIP 0.1539</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/768">
+                  <img src="u1839_classonly_v12_ar_s778_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Distilled output</strong>
+                  <span>CCIP 0.0607</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/768">
+                  <img src="u1839_classonly_v12_ar_s778_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Direct teacher</strong>
+                  <span>CCIP 0.0459</span>
+                </figcaption>
+              </figure>
+            </div>
+            <p class="control-line">
+              Wrong-ID distance 0.4510;
+              specificity margin +0.3903;
+              head CCIP 0.0818;
+              scene CLIP 0.344.
+            </p>
+          </article>
+          <article class="comparison">
+            <header>
+              <h3>Seed 779</h3>
+              <p>
+                Base 0.2389
+                <span>→</span>
+                Distilled 0.1355
+                <b class="gate">PASS</b>
+              </p>
+            </header>
+            <div class="image-grid">
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/768">
+                  <img src="report_u1839_reference.png" alt="Reference ID" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Reference ID</strong>
+                  <span>512 × 768</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/768">
+                  <img src="u1839_classonly_v12_ar_s779_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Input / Base</strong>
+                  <span>CCIP 0.2389</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/768">
+                  <img src="u1839_classonly_v12_ar_s779_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Distilled output</strong>
+                  <span>CCIP 0.1355</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:512/768">
+                  <img src="u1839_classonly_v12_ar_s779_512x768_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Direct teacher</strong>
+                  <span>CCIP 0.1159</span>
+                </figcaption>
+              </figure>
+            </div>
+            <p class="control-line">
+              Wrong-ID distance 0.4343;
+              specificity margin +0.2988;
+              head CCIP 0.1234;
+              scene CLIP 0.360.
+            </p>
+          </article>
+      </section>
+      <section class="identity-section" id="u9728">
+        <div class="identity-heading">
+          <div>
+            <h2>u9728</h2>
+            <p>三个固定 seed，共享 class-only 场景提示与全部算法参数。</p>
+          </div>
+          <dl>
+            <div><dt>Distilled mean</dt><dd>0.1204</dd></div>
+            <div><dt>Specificity</dt><dd>+0.3594</dd></div>
+            <div><dt>Pass</dt><dd>3/3</dd></div>
+          </dl>
+        </div>
+        
+          <article class="comparison">
+            <header>
+              <h3>Seed 777</h3>
+              <p>
+                Base 0.2811
+                <span>→</span>
+                Distilled 0.0720
+                <b class="gate">PASS</b>
+              </p>
+            </header>
+            <div class="image-grid">
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:640/640">
+                  <img src="report_u9728_reference.png" alt="Reference ID" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Reference ID</strong>
+                  <span>640 × 640</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:640/640">
+                  <img src="u9728_classonly_v12_ar_s777_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Input / Base</strong>
+                  <span>CCIP 0.2811</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:640/640">
+                  <img src="u9728_classonly_v12_ar_s777_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Distilled output</strong>
+                  <span>CCIP 0.0720</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:640/640">
+                  <img src="u9728_classonly_v12_ar_s777_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Direct teacher</strong>
+                  <span>CCIP 0.1047</span>
+                </figcaption>
+              </figure>
+            </div>
+            <p class="control-line">
+              Wrong-ID distance 0.4809;
+              specificity margin +0.4089;
+              head CCIP 0.0515;
+              scene CLIP 0.368.
+            </p>
+          </article>
+          <article class="comparison">
+            <header>
+              <h3>Seed 778</h3>
+              <p>
+                Base 0.3008
+                <span>→</span>
+                Distilled 0.1582
+                <b class="gate">PASS</b>
+              </p>
+            </header>
+            <div class="image-grid">
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:640/640">
+                  <img src="report_u9728_reference.png" alt="Reference ID" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Reference ID</strong>
+                  <span>640 × 640</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:640/640">
+                  <img src="u9728_classonly_v12_ar_s778_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Input / Base</strong>
+                  <span>CCIP 0.3008</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:640/640">
+                  <img src="u9728_classonly_v12_ar_s778_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Distilled output</strong>
+                  <span>CCIP 0.1582</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:640/640">
+                  <img src="u9728_classonly_v12_ar_s778_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Direct teacher</strong>
+                  <span>CCIP 0.1730</span>
+                </figcaption>
+              </figure>
+            </div>
+            <p class="control-line">
+              Wrong-ID distance 0.4824;
+              specificity margin +0.3242;
+              head CCIP 0.1731;
+              scene CLIP 0.393.
+            </p>
+          </article>
+          <article class="comparison">
+            <header>
+              <h3>Seed 779</h3>
+              <p>
+                Base 0.2431
+                <span>→</span>
+                Distilled 0.1310
+                <b class="gate">PASS</b>
+              </p>
+            </header>
+            <div class="image-grid">
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:640/640">
+                  <img src="report_u9728_reference.png" alt="Reference ID" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Reference ID</strong>
+                  <span>640 × 640</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:640/640">
+                  <img src="u9728_classonly_v12_ar_s779_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Input / Base</strong>
+                  <span>CCIP 0.2431</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:640/640">
+                  <img src="u9728_classonly_v12_ar_s779_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Distilled output</strong>
+                  <span>CCIP 0.1310</span>
+                </figcaption>
+              </figure>
+              
+              <figure>
+                <div class="image-frame" style="aspect-ratio:640/640">
+                  <img src="u9728_classonly_v12_ar_s779_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+                </div>
+                <figcaption>
+                  <strong>Direct teacher</strong>
+                  <span>CCIP 0.1331</span>
+                </figcaption>
+              </figure>
+            </div>
+            <p class="control-line">
+              Wrong-ID distance 0.4762;
+              specificity margin +0.3452;
+              head CCIP 0.0831;
+              scene CLIP 0.363.
+            </p>
+          </article>
+      </section>
+
+  <section class="metrics">
+    <h2>Complete metric table</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Identity</th>
+            <th>Seed</th>
+            <th>Base</th>
+            <th>Matched</th>
+            <th>Distilled</th>
+            <th>Teacher</th>
+            <th>Head ID</th>
+            <th>Scene</th>
+            <th>Gain</th>
+            <th>ID margin</th>
+            <th>Gate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>u4229</td>
+            <td>777</td>
+            <td>0.3044</td>
+            <td>0.0282</td>
+            <td class="best">0.2211</td>
+            <td>0.1947</td>
+            <td>0.2121</td>
+            <td>0.351</td>
+            <td>+0.0833</td>
+            <td>+0.1025</td>
+            <td>FAIL</td>
+          </tr>
+          <tr>
+            <td>u4229</td>
+            <td>778</td>
+            <td>0.3917</td>
+            <td>0.0468</td>
+            <td class="best">0.2041</td>
+            <td>0.1957</td>
+            <td>0.2369</td>
+            <td>0.367</td>
+            <td>+0.1876</td>
+            <td>+0.1149</td>
+            <td>FAIL</td>
+          </tr>
+          <tr>
+            <td>u4229</td>
+            <td>779</td>
+            <td>0.3885</td>
+            <td>0.0582</td>
+            <td class="best">0.1742</td>
+            <td>0.2358</td>
+            <td>0.2211</td>
+            <td>0.351</td>
+            <td>+0.2142</td>
+            <td>+0.1585</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <td>u1839</td>
+            <td>777</td>
+            <td>0.1978</td>
+            <td>0.0743</td>
+            <td class="best">0.2058</td>
+            <td>0.2007</td>
+            <td>0.1951</td>
+            <td>0.353</td>
+            <td>-0.0079</td>
+            <td>+0.1839</td>
+            <td>FAIL</td>
+          </tr>
+          <tr>
+            <td>u1839</td>
+            <td>778</td>
+            <td>0.1539</td>
+            <td>0.0988</td>
+            <td class="best">0.0607</td>
+            <td>0.0459</td>
+            <td>0.0818</td>
+            <td>0.344</td>
+            <td>+0.0932</td>
+            <td>+0.3903</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <td>u1839</td>
+            <td>779</td>
+            <td>0.2389</td>
+            <td>0.0916</td>
+            <td class="best">0.1355</td>
+            <td>0.1159</td>
+            <td>0.1234</td>
+            <td>0.360</td>
+            <td>+0.1034</td>
+            <td>+0.2988</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <td>u9728</td>
+            <td>777</td>
+            <td>0.2811</td>
+            <td>0.0172</td>
+            <td class="best">0.0720</td>
+            <td>0.1047</td>
+            <td>0.0515</td>
+            <td>0.368</td>
+            <td>+0.2091</td>
+            <td>+0.4089</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <td>u9728</td>
+            <td>778</td>
+            <td>0.3008</td>
+            <td>0.0185</td>
+            <td class="best">0.1582</td>
+            <td>0.1730</td>
+            <td>0.1731</td>
+            <td>0.393</td>
+            <td>+0.1426</td>
+            <td>+0.3242</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <td>u9728</td>
+            <td>779</td>
+            <td>0.2431</td>
+            <td>0.0124</td>
+            <td class="best">0.1310</td>
+            <td>0.1331</td>
+            <td>0.0831</td>
+            <td>0.363</td>
+            <td>+0.1121</td>
+            <td>+0.3452</td>
+            <td>PASS</td>
+          </tr></tbody>
+      </table>
+    </div>
+    <p class="footnote">CCIP 越低越相似，门槛为 0.178。ID margin 是输出到错误参考的距离减去到正确参考的距离，正值表示更接近正确身份。平均改善 0.1264，95% bootstrap CI [0.0809, 0.1679]，双侧精确配对符号检验 p=0.0078。Scene 使用 OpenAI CLIP ViT-B/32 余弦相似度，越高越符合雨夜霓虹和透明伞场景。白底 matched control 的 scene 均值为 0.242，distilled 为 0.361。平均像素 L1 为 0.451，不支持直接复制参考图。</p>
+  </section>
+</main>
+</body>
+</html>

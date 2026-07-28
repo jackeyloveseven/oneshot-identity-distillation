@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Krea2 Identity Score Distillation Audit</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f1f3f4; --surface: #e7eaec; --text: #182023; --muted: #5a656a;
+      --line: #c7ced1; --accent: #006f73; --accent-soft: #d1e7e6; --radius: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111719; --surface: #192124; --text: #edf1f2; --muted: #aab5b8;
+        --line: #344044; --accent: #6ac4c2; --accent-soft: #183b3d;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: "Helvetica Neue", "Noto Sans SC", Arial, sans-serif;
+      font-feature-settings: "tnum"; line-height: 1.5;
+    }
+    main { width: min(1480px, calc(100% - 40px)); margin: 0 auto; padding: 40px 0 96px; }
+    .hero {
+      min-height: min(700px, calc(100dvh - 40px)); display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr);
+      align-items: end; gap: 56px; padding: 56px 0 48px; border-bottom: 1px solid var(--line);
+    }
+    .eyebrow { color: var(--accent); font: 700 12px/1.2 monospace; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { max-width: 780px; margin: 18px 0 20px; font-size: clamp(48px, 7vw, 100px); line-height: .94; letter-spacing: -.055em; }
+    .hero-copy { max-width: 58ch; color: var(--muted); font-size: 18px; }
+    .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+    .summary div { min-height: 118px; padding: 20px; background: var(--surface); }
+    dt { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    dd { margin: 8px 0 0; font-size: clamp(27px, 3vw, 42px); font-weight: 650; letter-spacing: -.04em; }
+    .method { max-width: 900px; padding: 72px 0; }
+    .method h2, .identity-heading h2 { margin: 0; font-size: clamp(34px, 5vw, 64px); letter-spacing: -.045em; }
+    .method p, .identity-heading p { color: var(--muted); max-width: 68ch; }
+    code { color: var(--accent); background: var(--accent-soft); padding: 3px 7px; border-radius: 6px; }
+    .identity-section { padding: 64px 0 24px; border-top: 1px solid var(--line); }
+    .identity-heading { display: grid; grid-template-columns: 1fr auto; gap: 40px; align-items: end; margin-bottom: 36px; }
+    .identity-heading dl { display: grid; grid-template-columns: repeat(3, minmax(100px, 1fr)); gap: 28px; margin: 0; }
+    .identity-heading dd { font-size: 27px; }
+    .comparison { margin-bottom: 64px; }
+    .comparison > header { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; margin-bottom: 14px; }
+    .comparison h3 { margin: 0; font-size: 20px; }
+    .comparison header p { margin: 0; color: var(--muted); font-family: monospace; }
+    .comparison header span { color: var(--accent); }
+    .image-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    figure { min-width: 0; margin: 0; }
+    .image-frame { aspect-ratio: 2 / 3; overflow: hidden; border-radius: var(--radius); background: var(--surface); }
+    img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    figcaption { display: flex; justify-content: space-between; gap: 12px; padding: 10px 2px 0; font-size: 13px; }
+    figcaption span { color: var(--muted); text-align: right; }
+    .metrics { padding: 72px 0; }
+    .metrics h2 { font-size: 38px; letter-spacing: -.035em; }
+    .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--line); }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); font-family: monospace; font-size: 13px; }
+    th, td { padding: 13px 16px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    tr:last-child td { border-bottom: 0; }
+    th { color: var(--muted); font-weight: 500; }
+    td.best { color: var(--accent); font-weight: 700; }
+    .footnote { color: var(--muted); max-width: 78ch; margin-top: 18px; font-size: 14px; }
+    @media (max-width: 900px) {
+      main { width: min(100% - 24px, 1480px); padding-top: 20px; }
+      .hero { min-height: auto; grid-template-columns: 1fr; padding: 48px 0; }
+      h1 { font-size: clamp(46px, 16vw, 74px); }
+      .identity-heading { grid-template-columns: 1fr; align-items: start; }
+      .image-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 10px; }
+    }
+    @media (max-width: 520px) {
+      .summary, .identity-heading dl { grid-template-columns: 1fr 1fr; }
+      .image-grid { grid-template-columns: 1fr; }
+      .comparison > header { align-items: flex-start; flex-direction: column; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Krea2 identity score distillation</div>
+      <h1>Same-space distillation, audited.</h1>
+      <p class="hero-copy">三个身份，三种随机种子。每组同时展示参考身份、输入基线、蒸馏输出和直接 teacher 上限。</p>
+    </div>
+    <dl class="summary">
+      <div><dt>Distilled mean</dt><dd>0.0563</dd></div>
+      <div><dt>Worst case</dt><dd>0.0954</dd></div>
+      <div><dt>Pass rate</dt><dd>9/9</dd></div>
+      <div><dt>Paired p</dt><dd>0.0039</dd></div>
+    </dl>
+  </section>
+  <section class="method">
+    <h2>Locked protocol</h2>
+    <p>Base 和 teacher 共享由参考图生成的身份 capsule。teacher 额外接收参考图，只提供同状态分数残差，不进入 distilled scheduler。</p>
+    <p><code>Δs = -(1-σ) / σ · (vteacher-vbase)</code>，逐 token RMS 归一化，并投影到由 Euler 可达位移决定的自适应 trust region。</p>
+  </section>
+  
+      <section class="identity-section" id="u4229">
+        <div class="identity-heading">
+          <div>
+            <h2>u4229</h2>
+            <p>三种随机种子，共享身份 capsule、场景和算法参数。</p>
+          </div>
+          <dl>
+            <div><dt>Distilled mean</dt><dd>0.0639</dd></div>
+            <div><dt>Worst</dt><dd>0.0696</dd></div>
+            <div><dt>Pass</dt><dd>3/3</dd></div>
+          </dl>
+        </div>
+        
+          <article class="comparison">
+            <header>
+              <h3>Seed 777</h3>
+              <p>Base 0.0982 <span>→</span> Distilled 0.0571</p>
+            </header>
+            <div class="image-grid">
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u4229_whiteref.png" alt="Reference ID" loading="lazy">
+        </div>
+        <figcaption><strong>Reference ID</strong><span>身份参考</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u4229_s777_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+        </div>
+        <figcaption><strong>Input / Base</strong><span>CCIP 0.0982</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u4229_s777_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+        </div>
+        <figcaption><strong>Distilled output</strong><span>CCIP 0.0571</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u4229_s777_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+        </div>
+        <figcaption><strong>Direct teacher</strong><span>Upper bound 0.0371</span></figcaption>
+      </figure>
+            </div>
+          </article>
+          <article class="comparison">
+            <header>
+              <h3>Seed 778</h3>
+              <p>Base 0.0929 <span>→</span> Distilled 0.0696</p>
+            </header>
+            <div class="image-grid">
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u4229_whiteref.png" alt="Reference ID" loading="lazy">
+        </div>
+        <figcaption><strong>Reference ID</strong><span>身份参考</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u4229_s778_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+        </div>
+        <figcaption><strong>Input / Base</strong><span>CCIP 0.0929</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u4229_s778_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+        </div>
+        <figcaption><strong>Distilled output</strong><span>CCIP 0.0696</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u4229_s778_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+        </div>
+        <figcaption><strong>Direct teacher</strong><span>Upper bound 0.0350</span></figcaption>
+      </figure>
+            </div>
+          </article>
+          <article class="comparison">
+            <header>
+              <h3>Seed 779</h3>
+              <p>Base 0.0768 <span>→</span> Distilled 0.0650</p>
+            </header>
+            <div class="image-grid">
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u4229_whiteref.png" alt="Reference ID" loading="lazy">
+        </div>
+        <figcaption><strong>Reference ID</strong><span>身份参考</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u4229_s779_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+        </div>
+        <figcaption><strong>Input / Base</strong><span>CCIP 0.0768</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u4229_s779_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+        </div>
+        <figcaption><strong>Distilled output</strong><span>CCIP 0.0650</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u4229_s779_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+        </div>
+        <figcaption><strong>Direct teacher</strong><span>Upper bound 0.0407</span></figcaption>
+      </figure>
+            </div>
+          </article>
+      </section>
+      <section class="identity-section" id="u1839">
+        <div class="identity-heading">
+          <div>
+            <h2>u1839</h2>
+            <p>三种随机种子，共享身份 capsule、场景和算法参数。</p>
+          </div>
+          <dl>
+            <div><dt>Distilled mean</dt><dd>0.0597</dd></div>
+            <div><dt>Worst</dt><dd>0.0954</dd></div>
+            <div><dt>Pass</dt><dd>3/3</dd></div>
+          </dl>
+        </div>
+        
+          <article class="comparison">
+            <header>
+              <h3>Seed 777</h3>
+              <p>Base 0.2285 <span>→</span> Distilled 0.0411</p>
+            </header>
+            <div class="image-grid">
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u1839_whiteref.png" alt="Reference ID" loading="lazy">
+        </div>
+        <figcaption><strong>Reference ID</strong><span>身份参考</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u1839_s777_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+        </div>
+        <figcaption><strong>Input / Base</strong><span>CCIP 0.2285</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u1839_s777_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+        </div>
+        <figcaption><strong>Distilled output</strong><span>CCIP 0.0411</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u1839_s777_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+        </div>
+        <figcaption><strong>Direct teacher</strong><span>Upper bound 0.0366</span></figcaption>
+      </figure>
+            </div>
+          </article>
+          <article class="comparison">
+            <header>
+              <h3>Seed 778</h3>
+              <p>Base 0.1982 <span>→</span> Distilled 0.0427</p>
+            </header>
+            <div class="image-grid">
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u1839_whiteref.png" alt="Reference ID" loading="lazy">
+        </div>
+        <figcaption><strong>Reference ID</strong><span>身份参考</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u1839_s778_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+        </div>
+        <figcaption><strong>Input / Base</strong><span>CCIP 0.1982</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u1839_s778_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+        </div>
+        <figcaption><strong>Distilled output</strong><span>CCIP 0.0427</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u1839_s778_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+        </div>
+        <figcaption><strong>Direct teacher</strong><span>Upper bound 0.0320</span></figcaption>
+      </figure>
+            </div>
+          </article>
+          <article class="comparison">
+            <header>
+              <h3>Seed 779</h3>
+              <p>Base 0.2168 <span>→</span> Distilled 0.0954</p>
+            </header>
+            <div class="image-grid">
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u1839_whiteref.png" alt="Reference ID" loading="lazy">
+        </div>
+        <figcaption><strong>Reference ID</strong><span>身份参考</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u1839_s779_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+        </div>
+        <figcaption><strong>Input / Base</strong><span>CCIP 0.2168</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u1839_s779_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+        </div>
+        <figcaption><strong>Distilled output</strong><span>CCIP 0.0954</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u1839_s779_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+        </div>
+        <figcaption><strong>Direct teacher</strong><span>Upper bound 0.0286</span></figcaption>
+      </figure>
+            </div>
+          </article>
+      </section>
+      <section class="identity-section" id="u9728">
+        <div class="identity-heading">
+          <div>
+            <h2>u9728</h2>
+            <p>三种随机种子，共享身份 capsule、场景和算法参数。</p>
+          </div>
+          <dl>
+            <div><dt>Distilled mean</dt><dd>0.0454</dd></div>
+            <div><dt>Worst</dt><dd>0.0494</dd></div>
+            <div><dt>Pass</dt><dd>3/3</dd></div>
+          </dl>
+        </div>
+        
+          <article class="comparison">
+            <header>
+              <h3>Seed 777</h3>
+              <p>Base 0.1138 <span>→</span> Distilled 0.0494</p>
+            </header>
+            <div class="image-grid">
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u9728_whiteref.png" alt="Reference ID" loading="lazy">
+        </div>
+        <figcaption><strong>Reference ID</strong><span>身份参考</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u9728_s777_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+        </div>
+        <figcaption><strong>Input / Base</strong><span>CCIP 0.1138</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u9728_s777_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+        </div>
+        <figcaption><strong>Distilled output</strong><span>CCIP 0.0494</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u9728_s777_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+        </div>
+        <figcaption><strong>Direct teacher</strong><span>Upper bound 0.0316</span></figcaption>
+      </figure>
+            </div>
+          </article>
+          <article class="comparison">
+            <header>
+              <h3>Seed 778</h3>
+              <p>Base 0.1129 <span>→</span> Distilled 0.0455</p>
+            </header>
+            <div class="image-grid">
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u9728_whiteref.png" alt="Reference ID" loading="lazy">
+        </div>
+        <figcaption><strong>Reference ID</strong><span>身份参考</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u9728_s778_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+        </div>
+        <figcaption><strong>Input / Base</strong><span>CCIP 0.1129</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u9728_s778_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+        </div>
+        <figcaption><strong>Distilled output</strong><span>CCIP 0.0455</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u9728_s778_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+        </div>
+        <figcaption><strong>Direct teacher</strong><span>Upper bound 0.0193</span></figcaption>
+      </figure>
+            </div>
+          </article>
+          <article class="comparison">
+            <header>
+              <h3>Seed 779</h3>
+              <p>Base 0.0956 <span>→</span> Distilled 0.0411</p>
+            </header>
+            <div class="image-grid">
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u9728_whiteref.png" alt="Reference ID" loading="lazy">
+        </div>
+        <figcaption><strong>Reference ID</strong><span>身份参考</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u9728_s779_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_base.png" alt="Input / Base" loading="lazy">
+        </div>
+        <figcaption><strong>Input / Base</strong><span>CCIP 0.0956</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u9728_s779_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_distilled.png" alt="Distilled output" loading="lazy">
+        </div>
+        <figcaption><strong>Distilled output</strong><span>CCIP 0.0411</span></figcaption>
+      </figure>
+              
+      <figure>
+        <div class="image-frame">
+          <img src="u9728_s779_512x768_i3_p1_g0.06_l0.05_a1.5_rms_token_raw_roifull_o1_teacher.png" alt="Direct teacher" loading="lazy">
+        </div>
+        <figcaption><strong>Direct teacher</strong><span>Upper bound 0.0297</span></figcaption>
+      </figure>
+            </div>
+          </article>
+      </section>
+  <section class="metrics">
+    <h2>Complete metric table</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Identity</th><th>Seed</th><th>Base</th><th>Distilled</th><th>Teacher</th><th>Gain</th><th>Gate</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>u4229</td><td>777</td>
+            <td>0.0982</td>
+            <td class="best">0.0571</td>
+            <td>0.0371</td>
+            <td>0.0411</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <td>u4229</td><td>778</td>
+            <td>0.0929</td>
+            <td class="best">0.0696</td>
+            <td>0.0350</td>
+            <td>0.0233</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <td>u4229</td><td>779</td>
+            <td>0.0768</td>
+            <td class="best">0.0650</td>
+            <td>0.0407</td>
+            <td>0.0118</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <td>u1839</td><td>777</td>
+            <td>0.2285</td>
+            <td class="best">0.0411</td>
+            <td>0.0366</td>
+            <td>0.1874</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <td>u1839</td><td>778</td>
+            <td>0.1982</td>
+            <td class="best">0.0427</td>
+            <td>0.0320</td>
+            <td>0.1555</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <td>u1839</td><td>779</td>
+            <td>0.2168</td>
+            <td class="best">0.0954</td>
+            <td>0.0286</td>
+            <td>0.1214</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <td>u9728</td><td>777</td>
+            <td>0.1138</td>
+            <td class="best">0.0494</td>
+            <td>0.0316</td>
+            <td>0.0643</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <td>u9728</td><td>778</td>
+            <td>0.1129</td>
+            <td class="best">0.0455</td>
+            <td>0.0193</td>
+            <td>0.0673</td>
+            <td>PASS</td>
+          </tr>
+          <tr>
+            <td>u9728</td><td>779</td>
+            <td>0.0956</td>
+            <td class="best">0.0411</td>
+            <td>0.0297</td>
+            <td>0.0545</td>
+            <td>PASS</td>
+          </tr></tbody>
+      </table>
+    </div>
+    <p class="footnote">CCIP 越低越相似，预注册门槛为 0.178。平均改善 0.0808，95% bootstrap CI [0.0459, 0.1204]。参考图与输出的平均像素 L1 为 0.564，排除直接复制参考图。</p>
+  </section>
+</main>
+</body>
+</html>

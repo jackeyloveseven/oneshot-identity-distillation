@@ -1,0 +1,150 @@
+{
+ "investigation": "Why does training-free ref-KV injection transfer identity on Z-Image (strip) but not Lumina-2.0?",
+ "date": "2026-07-20",
+ "instrumentation": {
+  "scripts": [
+   "probe/30_kv_inject.py (+measure/+ref_bias, default off)",
+   "probe/80_lumina_inject.py (+measure/+ref_bias, default off)",
+   "probe/90_lumina_causal_driver.py",
+   "probe/91_zimage_causal_driver.py",
+   "probe/93_lumina_causal_rerun_w2.py",
+   "probe/94_final_figure.py"
+  ],
+  "measure": "exact softmax mass target-image-query -> injected ref-key columns, per layer",
+  "ref_bias": "uniform additive pre-softmax logit on all ref columns (all heads) = causal routing knob"
+ },
+ "item1_ref_attention_quant": {
+  "note": "same subject u2 (pink hair), same strip (pre-RoPE, position-free) mechanism",
+  "Z_strip_band16-25_w4_avg_mass": 0.07,
+  "Z_keep_posbound_band16-25_w4_avg_mass": 0.134,
+  "Lumina_strip_band16-23_w2_avg_mass": 0.043,
+  "Lumina_rope_posbound_band16-23_w2_avg_mass": 0.075,
+  "Lumina_strip_band8-15_w2_avg_mass": 0.094,
+  "key_norm_ref_vs_ctx": "matched in BOTH models (Z ~20 vs ~20; Lumina ~16 vs ~16)",
+  "verdict": "PRIOR HYPOTHESIS FALSIFIED: Lumina does NOT ignore strip keys (attends 4-9%, comparable to Z's 7%). Both models attend ~2x more to position-bound keys."
+ },
+ "item2_determinant": {
+  "excluded_candidates": {
+   "1_qk_norm_scale": "key norms ref==ctx in both models -> not norm starvation",
+   "2_softmax_scale": "Lumina scale LARGER (sharper softmax) -> cannot explain low ref-mass; and mass is not low",
+   "4_attention_routing_amount": "comparable mass Z vs Lumina; forcing mass up does not help (see item3)"
+  },
+  "surviving_determinant": "content-addressing SELECTIVITY/EFFICIENCY of a POSITION-FREE (phase-stripped) key. Z-Image's per-query ref-attention is PEAKED (content-selective); Lumina's is DIFFUSE (spreads over all ref tokens = averages to color-bleed, not structured identity).",
+  "selectivity_measurement": {
+   "metric": "per-query attention over ONLY ref columns, renormalized; normalized entropy [0,1] (0=peaked/selective, 1=uniform/diffuse) + mean top-1 peak prob",
+   "Z_strip_band16-25": {
+    "mean_entropy_norm": 0.703,
+    "mean_peak": 0.1025,
+    "mean_mass": 0.069
+   },
+   "Lumina_strip_band16-23": {
+    "mean_entropy_norm": 0.806,
+    "mean_peak": 0.0425,
+    "mean_mass": 0.038
+   },
+   "reading": "Z is 2.4x more PEAKED (peak 0.102 vs 0.043) and lower entropy (0.70 vs 0.81) -> Z content-addresses structured identity; Lumina reads a diffuse average -> explains why forcing Lumina's mass gives unstructured pink color-bleed, not the ref's structured features."
+  },
+  "candidate_cause": "RoPE theta (Z=256 vs Lumina=10000). Low theta rotates even low-freq channels fast -> a phase-stripped key spreads across relative positions & queries can select it distinctively (peaked content dictionary); high theta barely rotates low-freq channels over the image -> a phase-stripped key looks near-identical (relative-pos~0) to all queries -> diffuse. NOT isolated experimentally (theta baked into a trained model; cannot cleanly swap). CORRELATIONAL on the salient arch difference; the selectivity dissociation is the mechanistic bridge.",
+  "corroboration": "Lumina rope (position-bound, refsize==size) DOES bring identity through as a noisy position-locked paste -> proves V carries identity; only the position-free content-addressing route is inefficient/diffuse."
+ },
+ "item3_causal_test": {
+  "note": "CORRECTED after advisor flagged a value-magnitude confound in the first (w=2, band8-15) sweep: at w>=2 the injected w*ref-value blows Lumina's cond_norm/noise_norm renorm -> blank-white wash (a magnitude artifact, NOT a routing outcome). Rerun at low w and MATCHED deep band 16-23.",
+  "first_sweep_CONFOUNDED": {
+   "band": "8-15",
+   "w": 2.0,
+   "outcome": "blank->noise wash (value-magnitude artifact, discard as routing evidence)"
+  },
+  "decisive_sweep": {
+   "band": "16-23 (matched to Z identity band 16-25)",
+   "w": [
+    1.0,
+    0.5
+   ],
+   "refpos": "strip",
+   "mass_vs_bias_w1": {
+    "rb0": 0.041,
+    "rb1": 0.084,
+    "rb2": 0.155,
+    "rb3": 0.253,
+    "rb4": 0.372,
+    "rb6": 0.642
+   },
+   "pinkness_vs_bias_w1_RminusG": {
+    "rb0": 18.0,
+    "rb1": 20.8,
+    "rb2": 24.2,
+    "rb3": 28.6,
+    "rb4": 30.7,
+    "rb6": 37.0
+   },
+   "anchors": {
+    "ref_pinkness": 39.5,
+    "lumina_grey_baseline": 18.0,
+    "Z_strip_works_pinkness_at_mass0.07": 64.9
+   }
+  },
+  "outcome_CORRECTED": "Forcing mass up raises hair PINKNESS monotonically (18->37), BUT visual audit of rb3/rb4 (pre-collapse) shows this is MEAN-COLOR BLEED, NOT structured identity: the face stays the MODEL'S OWN, eyes stay dark-grey (NOT ref's PURPLE), NO red pendant -- only a diffuse pink tint on hair-tips/collar. Pinkness PLATEAUS at ~37 = ref's MEAN hue (39.5), never Z's structured 65. At matched mass 0.07 Lumina shows 0 structured id while Z shows FULL structured id (hair+purple eyes+pendant).",
+  "verdict": "Structured identity NEVER transfers in Lumina at any coherent operating point. Forcing the (diffuse) position-free attention only injects the ref's MEAN COLOR. -> verdict (1) clean-rescue is DEAD."
+ },
+ "overall_verdict": {
+  "mechanism_clean": "descriptive dissociation clean; CAUSE not isolated",
+  "clean_part": "(1) Falsified the prior 'Lumina softmax ignores strip keys' hypothesis: both attend 4-9%. (2) Ruled out key-norm mismatch and softmax-scale (Lumina's is sharper). (3) STRONGEST result (unconfounded): at MATCHED mass 0.07, Z transfers FULL STRUCTURED identity (hair+purple eyes+red pendant) while Lumina transfers NONE -> the discriminator is content-addressing SELECTIVITY (Z per-query ref-attention 2.4x more PEAKED: entropy 0.70 vs 0.81, peak 0.102 vs 0.043). (4) Lumina rope (pos-bound) copy-pastes -> V carries identity; only the position-free content route is diffuse.",
+  "murky_part": "No clean rescue: forcing Lumina's diffuse routing yields MEAN-COLOR bleed, never structured identity, at any coherent operating point. AND the CAUSE of the selectivity gap is NOT isolated -- N=2, so RoPE theta (256 vs 10000) is CONFOUNDED with GQA (30kv vs 8kv, candidate 4, untested), depth (30 vs 26 layers), Gemma2 text encoder, and training data. 'It's theta' is a hypothesis, not earned.",
+  "aaai_implication": "Verdict leans (2) but a CHARACTERIZED (2): clean descriptive dissociation + failed causal rescue + UNISOLATED cause. A 'universal training-free activation recipe / rescue-Lumina' method paper is DEAD. A comparative-MECHANISM paper is defensible ONLY IF it claims the SELECTIVITY DISSOCIATION as the discriminator (not theta as cause, not 'we transfer identity to Lumina'). To upgrade toward a strong causal mechanism paper: isolate the cause WITHIN one model (apply a high-theta rotation to Z's injected strip key via refpos surgery; if Z's transfer collapses to color-bleed, phase-geometry is causally implicated with no N-confound) OR add a 3rd model on a theta gradient (Krea-dev). Without that, converge."
+ },
+ "figures": {
+  "quant": "out/lumina/causal/attn_quant_comparison.png",
+  "paired_visual": "out/lumina/causal/montage_decisive_ZvsLumina.png",
+  "causal_wash_sweep": "out/lumina/causal/montage_partC_w2_biassweep.png"
+ },
+ "item4_theta_causal_isolation_Zonly": {
+  "goal": "Single-model (Z-Image ONLY) isolation of RoPE phase geometry as the determinant, removing the N=2 confound (GQA/depth/text-encoder/data). Rotate Z's injected ref key with an actual RoPE at a SWEEPABLE theta (refpos='thetasweep' added to 30_kv_inject.py, default off; same center-aligned ref grid at every theta so THETA is the only variable). Theta grid 256(Z native)->1000->4000->10000(Lumina's baked theta). Band 16-25, w4, u2, seed0, 30 steps -- Z's established identity-transfer operating point.",
+  "prediction_if_theta_is_cause": "theta up -> per-query ref-attn peak DOWN, normalized entropy UP (toward Lumina's diffuse anchor peak0.043/ent0.806) AND structured identity (pink hair+purple eyes+red pendant) degrades to mean-color bleed = reproduces Lumina failure inside one frozen model.",
+  "selectivity_dose_response": {
+   "theta256": {
+    "mean_peak": 0.15143,
+    "mean_entropy_norm": 0.6177,
+    "mean_ref_mass": 0.1374
+   },
+   "theta1000": {
+    "mean_peak": 0.11161,
+    "mean_entropy_norm": 0.6699,
+    "mean_ref_mass": 0.1054
+   },
+   "theta4000": {
+    "mean_peak": 0.11142,
+    "mean_entropy_norm": 0.679,
+    "mean_ref_mass": 0.0818
+   },
+   "theta10000": {
+    "mean_peak": 0.10937,
+    "mean_entropy_norm": 0.6803,
+    "mean_ref_mass": 0.0778
+   },
+   "anchors": {
+    "Z_strip": {
+     "peak": 0.10246,
+     "entropy": 0.7027
+    },
+    "Lumina_strip": {
+     "peak": 0.04254,
+     "entropy": 0.806
+    }
+   }
+  },
+  "identity_verdict_per_theta": {
+   "theta256": "STRUCTURED identity (pink hair + purple eyes + red teardrop pendant) present; compositional framing/polaroid artifact from native-theta center positioning",
+   "theta1000": "STRUCTURED identity present (hair+purple eyes+red pendant), clean composition",
+   "theta4000": "STRUCTURED identity present (hair+purple eyes+red pendant)",
+   "theta10000": "STRUCTURED identity STILL FULLY present (pink hair + purple/violet eyes + red teardrop pendant on gold necklace) -- NOT color-bleed"
+  },
+  "reading": "Dose-response is monotonic in the predicted direction (peak 0.151->0.109, entropy 0.618->0.680) but SATURATES by theta=1000 and, decisively, its ENDPOINT LANDS IN Z'S WORKING REGIME, NOT Lumina's failing one: at Lumina's theta=10000 peak~0.109 == Z's OWN strip anchor (0.102) and entropy 0.680 is BELOW the strip anchor (0.703) -- i.e. still MORE peaked than plain strip, and nowhere near Lumina's diffuse anchor (peak0.043/ent0.806). Structured identity (pink hair+purple eyes+red pendant) survives at EVERY theta including 10000. ROOT CAUSE OF THE BUILT-IN NULL (verified numerically): RoPE freq_i=1/theta^(2i/d), so RAISING the KEY's theta REDUCES its rotation (frac of near-frozen channels rises 0.21->0.54 over 256->10000, mean |angle| 6.44->4.18 rad) -> a higher-theta key converges TOWARD the position-free STRIP key, which is Z's WORKING representation. The sweep therefore interpolates center@256(super-peaked) -> strip-like@10000(working), staying inside Z's working range the whole way; it CANNOT reach Lumina's diffuse failure by construction.",
+  "verdict": "(2) DESCRIPTIVE -- but for an HONEST reason, NOT 'theta falsified'. This key-side test is INCONCLUSIVE about theta: (i) it manipulates the KEY's theta while queries stay at Z's native 256, whereas the phase-geometry hypothesis is about QUERY-side theta (Z queries@256 vs Lumina queries@10000 reading a position-free key); (ii) the key-side knob moves the key TOWARD Z's own strip/working regime (see reading), so a null is built-in and carries no information about the query-side mechanism. The direct query-side test is INFEASIBLE within one frozen model: changing tf.rope_embedder.theta rotates ALL queries+keys off-distribution -> breaks generation -> confounds 'identity lost' with 'model broke'. NET: the single-model theta isolation the plan proposed does NOT support a strong-causal theta claim, and cannot refute one either -> the CAUSE of the selectivity/identity dissociation REMAINS UNRESOLVED. Strong-causal AAAI upgrade via within-Z theta isolation is NOT achievable this way.",
+  "figures": {
+   "montage": "out/lumina/causal/montage_theta_causal_sweep.png",
+   "dose_response": "out/lumina/causal/theta_causal_doseresponse.png",
+   "summary_json": "out/zimage_causal/theta_sweep/theta_sweep_summary.json"
+  },
+  "decision_for_aaai": "Do NOT upgrade to strong-causal. Ship the CHARACTERIZED descriptive dissociation (clean cross-model selectivity gap + failed Lumina rescue + UNISOLATED, likely-unisolatable-within-one-model cause). A comparative-mechanism paper claiming the SELECTIVITY DISSOCIATION as the discriminator remains defensible; a 'phase geometry is THE cause' claim is NOT earned. The 3rd-model-on-a-theta-gradient route reintroduces N-confounds."
+ }
+}

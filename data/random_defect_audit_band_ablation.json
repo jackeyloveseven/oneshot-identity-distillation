@@ -1,0 +1,414 @@
+{
+  "protocol": {
+    "purpose": "Replace the paper's previously-admitted biased qualitative check ('3 of 17 full-depth flagged cases, selected for clarity of the judge's note') with a seeded, non-cherry-picked random audit of Gemini-3.1-Pro's visible_defect=yes flags on the band-position LoRA ablation (30-subject x 2-seed dev probe set, step4000), plus a false-negative check on visible_defect=no cases.",
+    "framing_and_honesty": [
+      "This audit was performed by a Claude-family model (Sonnet) reading the actual generated images and independently classifying each sampled Gemini flag. This is model-checking-model across two different model families (Claude checking Gemini), NOT an independent human review. The contact sheet PNGs exist so a human can do the final ~5-minute eyeball check themselves.",
+      "The seed (0) and the full sampling code were fixed and written down BEFORE any sampled image was opened/viewed. No image was viewed prior to sampling, no case was excluded or swapped after being viewed, and no replacement sampling occurred.",
+      "Per-case verdicts were formed by reading each full-resolution source PNG individually (1024x1024 native), NOT by reading the downscaled contact-sheet cells (~480px) -- the contact sheet is a human-facing summary artifact only, it was not used to form these verdicts.",
+      "Verdicts judge visible_defect specifically (anatomical/geometric/composition breakage visible in the generated image itself), not same_character identity mismatch, which is a separate judge field and out of scope here -- a case can be same_character=no/partial (wrong character) while visible_defect=no (cleanly rendered), and vice versa."
+    ],
+    "seed": 0,
+    "date": "2026-07-16",
+    "arm_to_image_dir_mapping": {
+      "full_depth (0-29, r4)": {
+        "judge_json": "data/gemini_judge_band_0-29_r4_step4000.json",
+        "image_dir": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band0-29_r4/",
+        "key_pattern": "{uid}_lora_ckptlink_band0-29_r4_s{seed}",
+        "image_filename_pattern": "u{uid}_lora_s{seed}.png",
+        "source_of_mapping": "probe/58_band_ablation_run.sh (run_arm function, ckptlink naming) + verified 1:1 against all 60 judge keys"
+      },
+      "late (14-29, r8)": {
+        "judge_json": "data/gemini_judge_band_14-29_r8_step4000.json",
+        "image_dir": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band14-29_r8/",
+        "key_pattern": "{uid}_lora_ckptlink_band14-29_r8_s{seed}",
+        "image_filename_pattern": "u{uid}_lora_s{seed}.png",
+        "source_of_mapping": "probe/58_band_ablation_run.sh + verified 1:1 against all 60 judge keys"
+      },
+      "early (0-15, r8) -- NOT sampled, see note below": {
+        "judge_json": "data/gemini_judge_band_0-15_r8_step4000.json",
+        "image_dir": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band0-15_r8/",
+        "key_pattern": "{uid}_lora_ckptlink_band0-15_r8_s{seed}",
+        "image_filename_pattern": "u{uid}_lora_s{seed}.png",
+        "source_of_mapping": "probe/58_band_ablation_run.sh + verified 1:1 against all 60 judge keys"
+      },
+      "mid (10-25, r8)": {
+        "judge_json": "data/gemini_judge_devprobe_base_rep30_step4000.json",
+        "image_dir": "/mnt/local/cherry_out/devprobe/base_rep30_step4000/",
+        "key_pattern": "{uid}_lora_base_rep30_step4000_s{seed}",
+        "image_filename_pattern": "u{uid}_lora_s{seed}.png",
+        "source_of_mapping": "probe/59_band_ablation_report.py docstring + probe/60_crossjudge_gpt55.py MID= path string, both confirm base_rep30_step4000 IS the pre-existing mid=10-25,r8 arm (script comment: 'mid 10-25 r8 already exists as run_mix2/step_4000' -- base_rep30_step4000 is that same run under its dev-probe output name). Verified 1:1 against all 60 judge keys."
+      }
+    },
+    "population_sizes_all_arms": {
+      "full_depth": {
+        "n_total": 60,
+        "visible_defect_yes": 17,
+        "visible_defect_no": 43,
+        "judge_error_entries": 0
+      },
+      "late": {
+        "n_total": 60,
+        "visible_defect_yes": 11,
+        "visible_defect_no": 47,
+        "judge_error_entries": 2,
+        "judge_error_ids": [
+          "1391_lora_ckptlink_band14-29_r8_s0",
+          "2407_lora_ckptlink_band14-29_r8_s1"
+        ]
+      },
+      "early": {
+        "n_total": 60,
+        "visible_defect_yes": 5,
+        "visible_defect_no": 54,
+        "judge_error_entries": 1,
+        "judge_error_ids": [
+          "5064_lora_ckptlink_band0-15_r8_s0"
+        ]
+      },
+      "mid": {
+        "n_total": 60,
+        "visible_defect_yes": 2,
+        "visible_defect_no": 55,
+        "judge_error_entries": 3,
+        "judge_error_ids": [
+          "2407_lora_base_rep30_step4000_s0",
+          "3802_lora_base_rep30_step4000_s1",
+          "5064_lora_base_rep30_step4000_s1"
+        ]
+      }
+    },
+    "judge_error_note": "6 of 240 judge entries across the 4 arms (2 late, 1 early, 3 mid) are API-call failures (HTTP 429 rate limit, or judge response with no parseable JSON) -- these have no same_character/visible_defect verdict at all and were excluded from both the yes/no populations and the sampling universe (they are neither 'yes' nor 'no'). This slightly shrinks effective denominators, e.g. mid is 2 yes / 55 no / 3 error out of 60, not 2 yes / 58 no.",
+    "early_arm_excluded_note": "The early (0-15, r8) arm's judge file was inspected for schema and population counts (5 visible_defect=yes out of 60) for completeness, but Step 2 of the assigned protocol does not call for sampling from it (only full-depth, late, and mid are named as sample sources). No early-arm cases appear in the sample or contact sheets; this is a faithful implementation of the given protocol, not an omission.",
+    "sampling_order": "1) sample 10 of 17 full-depth visible_defect=yes (or all if <=10); 2) sample 5 of 11 late visible_defect=yes (or all if <=5); 3) take ALL mid visible_defect=yes (n=2, no randomness consumed); 4) sample 4 of 55 mid visible_defect=no as negative controls. This exact order determines the random.Random(0) draw stream -- reordering would change the sample.",
+    "sampling_code": "import json, random, os\n\nDATA = \"data\"\n\ndef load(fname):\n    return json.load(open(os.path.join(DATA, fname)))\n\nfull_depth = load(\"gemini_judge_band_0-29_r4_step4000.json\")\nlate = load(\"gemini_judge_band_14-29_r8_step4000.json\")\nmid = load(\"gemini_judge_devprobe_base_rep30_step4000.json\")\n\n# Deterministic universes: sort case-id strings alphabetically so the sample\n# does not depend on JSON key insertion order (which reflects concurrent\n# judge-call completion order, not anything meaningful).\nfd_yes = sorted(k for k, v in full_depth.items() if v.get(\"visible_defect\") == \"yes\")\nlate_yes = sorted(k for k, v in late.items() if v.get(\"visible_defect\") == \"yes\")\nmid_yes = sorted(k for k, v in mid.items() if v.get(\"visible_defect\") == \"yes\")\nmid_no = sorted(k for k, v in mid.items() if v.get(\"visible_defect\") == \"no\")\n\nrng = random.Random(0)\n\n# Fixed draw order: full-depth flags, then late flags, then mid negative\n# controls. (mid_yes is taken in full -- only 2 exist -- so it does not\n# consume any randomness.)\nsample_fd = rng.sample(fd_yes, min(10, len(fd_yes)))\nsample_late = rng.sample(late_yes, min(5, len(late_yes)))\nsample_mid_yes = list(mid_yes)  # ALL mid-arm flags, no sampling needed (n=2)\nsample_mid_no = rng.sample(mid_no, min(4, len(mid_no)))\n",
+    "image_existence_check": "Before sampling, verified all 240 judge entries (60 per arm x 4 arms) resolve to an existing PNG file via the filename pattern above (0 missing). After sampling, re-verified all 21 sampled image paths exist (0 missing) -- no replacement sampling was needed."
+  },
+  "cases": [
+    {
+      "id": "68_lora_ckptlink_band0-29_r4_s1",
+      "arm": "full_depth",
+      "arm_label": "full-depth (0-29, r4)",
+      "bucket": "full_depth_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band0-29_r4/u68_lora_s1.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "yes",
+      "judge_confidence": 0.9,
+      "judge_note": "Intrusive, garbled foreground element on the left side.",
+      "my_verdict": "BORDERLINE",
+      "reason": "Left-foreground has an out-of-focus blob (blonde hair/white fabric) that reads as intrusive/unclear; could be intentional bokeh framing, not anatomical breakage, but genuinely odd on a quick look."
+    },
+    {
+      "id": "7918_lora_ckptlink_band0-29_r4_s0",
+      "arm": "full_depth",
+      "arm_label": "full-depth (0-29, r4)",
+      "bucket": "full_depth_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band0-29_r4/u7918_lora_s0.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "no",
+      "judge_confidence": 0.9,
+      "judge_note": "Face is garbled due to struggling with anthro design.",
+      "my_verdict": "FALSE-POSITIVE",
+      "reason": "Anthro rat/mouse face is a coherent, well-formed deliberate design (symmetric eyes, nose, whiskers, cap) -- not garbled; judge's 'struggling with anthro design' reads as unfamiliarity with the design, not real breakage."
+    },
+    {
+      "id": "1740_lora_ckptlink_band0-29_r4_s1",
+      "arm": "full_depth",
+      "arm_label": "full-depth (0-29, r4)",
+      "bucket": "full_depth_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band0-29_r4/u1740_lora_s1.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "yes",
+      "judge_confidence": 0.85,
+      "judge_note": "Hand grabbing the shirt is severely mangled.",
+      "my_verdict": "BORDERLINE",
+      "reason": "Hand gripping the shirt collar is a bit soft/indistinct in finger separation but is not 'severely mangled' -- plausible finger count and pose, just stylistically soft rendering."
+    },
+    {
+      "id": "4224_lora_ckptlink_band0-29_r4_s1",
+      "arm": "full_depth",
+      "arm_label": "full-depth (0-29, r4)",
+      "bucket": "full_depth_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band0-29_r4/u4224_lora_s1.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "no",
+      "judge_confidence": 0.95,
+      "judge_note": "Different skin tone, eyes, hair style, and accessories. Impossible torso anatomy.",
+      "my_verdict": "FALSE-POSITIVE",
+      "reason": "No impossible torso anatomy visible; waist/hip curve is stylized (exaggerated proportions) but coherent and single, with no extra/missing/twisted body parts. Skin/eye/hair mismatch cited in the same note is a same_character issue, not a defect."
+    },
+    {
+      "id": "5369_lora_ckptlink_band0-29_r4_s1",
+      "arm": "full_depth",
+      "arm_label": "full-depth (0-29, r4)",
+      "bucket": "full_depth_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band0-29_r4/u5369_lora_s1.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "yes",
+      "judge_confidence": 0.8,
+      "judge_note": "Identity features match, but image 2 has severely garbled anatomy and clothing.",
+      "my_verdict": "BORDERLINE",
+      "reason": "One odd dark thread/strand dangles unattached near the shoulder patch and the jacket's cracked-texture folds are visually busy, but the face/hand/gesture are coherent -- not 'severely garbled' as claimed."
+    },
+    {
+      "id": "5369_lora_ckptlink_band0-29_r4_s0",
+      "arm": "full_depth",
+      "arm_label": "full-depth (0-29, r4)",
+      "bucket": "full_depth_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band0-29_r4/u5369_lora_s0.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "yes",
+      "judge_confidence": 0.9,
+      "judge_note": "Character matches well, but arm/hand anatomy is garbled.",
+      "my_verdict": "CONFIRMED",
+      "reason": "Her left arm (image right side) drapes the jacket but terminates with no recognizable hand -- the sleeve dissolves into an ambiguous rolled/cylindrical fold with zero fingers visible where a hand should be. Matches the judge's 'hand is missing' claim."
+    },
+    {
+      "id": "4573_lora_ckptlink_band0-29_r4_s1",
+      "arm": "full_depth",
+      "arm_label": "full-depth (0-29, r4)",
+      "bucket": "full_depth_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band0-29_r4/u4573_lora_s1.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "partial",
+      "judge_confidence": 0.9,
+      "judge_note": "Garbled hand anatomy in image 2; differing hair color and gender presentation.",
+      "my_verdict": "CONFIRMED",
+      "reason": "Hand holding a white cloth/paper at hip level is a blob with only vague finger-like ridges, no clean individual digits -- genuinely melted/garbled hand anatomy."
+    },
+    {
+      "id": "9534_lora_ckptlink_band0-29_r4_s0",
+      "arm": "full_depth",
+      "arm_label": "full-depth (0-29, r4)",
+      "bucket": "full_depth_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band0-29_r4/u9534_lora_s0.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "partial",
+      "judge_confidence": 0.95,
+      "judge_note": "Half of the hair is inexplicably long and blonde.",
+      "my_verdict": "CONFIRMED",
+      "reason": "A long straight blonde hair strand is spliced into otherwise wavy brown hair -- a visually jarring rendering-consistency break (two incompatible hair textures/colors fused) that any viewer would immediately notice as wrong, though it's a compositing artifact rather than body anatomy."
+    },
+    {
+      "id": "6366_lora_ckptlink_band0-29_r4_s1",
+      "arm": "full_depth",
+      "arm_label": "full-depth (0-29, r4)",
+      "bucket": "full_depth_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band0-29_r4/u6366_lora_s1.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "no",
+      "judge_confidence": 0.95,
+      "judge_note": "Image 2 shows a human wearing a mask, not the anthro rabbit character.",
+      "my_verdict": "FALSE-POSITIVE",
+      "reason": "The bunny mask is unsettling but cleanly and coherently rendered (symmetric, consistent lighting/linework, sits properly on neck); body proportions and visible hand near the belt are normal. This is an identity/design-departure (human in a mask replacing the anthro rabbit) captured correctly by same_character=no, not a rendering defect."
+    },
+    {
+      "id": "4573_lora_ckptlink_band0-29_r4_s0",
+      "arm": "full_depth",
+      "arm_label": "full-depth (0-29, r4)",
+      "bucket": "full_depth_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band0-29_r4/u4573_lora_s0.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "partial",
+      "judge_confidence": 0.9,
+      "judge_note": "Different hair color and gender presentation; mangled bottom-right hand.",
+      "my_verdict": "BORDERLINE",
+      "reason": "Hand holding the phone (near face) is acceptable; the lower-right hanging hand is a bit stiff/waxy with unclear finger separation but no clear extra/missing digit -- a soft imperfection, not obviously 'mangled'."
+    },
+    {
+      "id": "7287_lora_ckptlink_band14-29_r8_s0",
+      "arm": "late",
+      "arm_label": "late (14-29, r8)",
+      "bucket": "late_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band14-29_r8/u7287_lora_s0.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "yes",
+      "judge_confidence": 0.95,
+      "judge_note": "Garbled/melted anatomy on the right arm.",
+      "my_verdict": "CONFIRMED",
+      "reason": "The right arm (image right) blurs into an indistinct pale/translucent shape against the white background near the elbow/forearm, with no recognizable hand -- genuinely melted-looking limb."
+    },
+    {
+      "id": "2364_lora_ckptlink_band14-29_r8_s0",
+      "arm": "late",
+      "arm_label": "late (14-29, r8)",
+      "bucket": "late_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band14-29_r8/u2364_lora_s0.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "no",
+      "judge_confidence": 0.9,
+      "judge_note": "Face horizontally stretched. Headband missing.",
+      "my_verdict": "FALSE-POSITIVE",
+      "reason": "Face reads as a normal, if rounder/cuter, stylized anime face -- no horizontal stretching or warping visible in eyes/nose/mouth alignment. Missing headband is a same_character issue, not a defect."
+    },
+    {
+      "id": "68_lora_ckptlink_band14-29_r8_s1",
+      "arm": "late",
+      "arm_label": "late (14-29, r8)",
+      "bucket": "late_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band14-29_r8/u68_lora_s1.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "yes",
+      "judge_confidence": 0.9,
+      "judge_note": "Garbled hand anatomy.",
+      "my_verdict": "BORDERLINE",
+      "reason": "Hand near the hoodie drawstring toggle is a little blob-like around the small object, but the overall grip/pose is plausible -- a soft/minor imperfection, not clearly broken."
+    },
+    {
+      "id": "1740_lora_ckptlink_band14-29_r8_s1",
+      "arm": "late",
+      "arm_label": "late (14-29, r8)",
+      "bucket": "late_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band14-29_r8/u1740_lora_s1.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "partial",
+      "judge_confidence": 0.9,
+      "judge_note": "Different skin tone and added scar; hand on shoulder is garbled.",
+      "my_verdict": "FALSE-POSITIVE",
+      "reason": "Hand resting on the opposite shoulder shows a normal grip with distinguishable fingers and thumb -- reads as an ordinary, if slightly stylized, hand-on-shoulder pose, not garbled."
+    },
+    {
+      "id": "5844_lora_ckptlink_band14-29_r8_s0",
+      "arm": "late",
+      "arm_label": "late (14-29, r8)",
+      "bucket": "late_flag_sample",
+      "image_path": "/mnt/local/cherry_out/devprobe/lora_ckptlink_band14-29_r8/u5844_lora_s0.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "partial",
+      "judge_confidence": 0.95,
+      "judge_note": "Missing elf ears; generated image has three arms/hands.",
+      "my_verdict": "FALSE-POSITIVE",
+      "reason": "Exactly two arms and two hands are visible (one raised to cheek, one holding a small item at the belt) -- no third arm/hand anywhere in the frame. The 'three arms/hands' claim does not hold up; likely the judge misread the layered strap/pouch costume details as an extra limb."
+    },
+    {
+      "id": "4573_lora_base_rep30_step4000_s0",
+      "arm": "mid",
+      "arm_label": "mid (10-25, r8)",
+      "bucket": "mid_flag_all",
+      "image_path": "/mnt/local/cherry_out/devprobe/base_rep30_step4000/u4573_lora_s0.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "no",
+      "judge_confidence": 0.9,
+      "judge_note": "Different hair color and gender presentation; hand anatomy is garbled.",
+      "my_verdict": "BORDERLINE",
+      "reason": "Hand holding the phone near the face is soft-shaded with somewhat indistinct finger boundaries, but the overall hand shape and finger count read as plausible -- a mild imperfection, not clearly garbled."
+    },
+    {
+      "id": "4977_lora_base_rep30_step4000_s0",
+      "arm": "mid",
+      "arm_label": "mid (10-25, r8)",
+      "bucket": "mid_flag_all",
+      "image_path": "/mnt/local/cherry_out/devprobe/base_rep30_step4000/u4977_lora_s0.png",
+      "judge_verdict": "yes",
+      "judge_same_character": "yes",
+      "judge_confidence": 0.9,
+      "judge_note": "Characters match well, but image 2 has strange object on chest and a weirdly placed hand.",
+      "my_verdict": "BORDERLINE",
+      "reason": "A silver oval charm/pendant hangs oddly on the chest (unusual accessory placement, not an anatomical defect) and the lower-left hand resting on a surface is cropped abruptly at the frame edge with a slightly stiff pose -- genuinely a bit odd, but not severe breakage."
+    },
+    {
+      "id": "2407_lora_base_rep30_step4000_s1",
+      "arm": "mid",
+      "arm_label": "mid (10-25, r8)",
+      "bucket": "mid_negative_control",
+      "image_path": "/mnt/local/cherry_out/devprobe/base_rep30_step4000/u2407_lora_s1.png",
+      "judge_verdict": "no",
+      "judge_same_character": "no",
+      "judge_confidence": 0.99,
+      "judge_note": "Missing signature swirly eyebrow, facial hair, and asymmetrical eye-covering hairstyle.",
+      "my_verdict": "NEGATIVE_CONTROL_CLEAN",
+      "reason": "Face/neck/shoulders all anatomically normal; no hands in frame; nothing resembling damage. Judge's 'no' is correct -- no false negative."
+    },
+    {
+      "id": "943_lora_base_rep30_step4000_s1",
+      "arm": "mid",
+      "arm_label": "mid (10-25, r8)",
+      "bucket": "mid_negative_control",
+      "image_path": "/mnt/local/cherry_out/devprobe/base_rep30_step4000/u943_lora_s1.png",
+      "judge_verdict": "no",
+      "judge_same_character": "partial",
+      "judge_confidence": 0.9,
+      "judge_note": "Gender presentation differs significantly; earrings and styling also mismatch.",
+      "my_verdict": "NEGATIVE_CONTROL_CLEAN",
+      "reason": "Face, neck, shoulders, collarbone all normal; no hands in frame; nothing resembling damage. Judge's 'no' is correct -- no false negative."
+    },
+    {
+      "id": "2364_lora_base_rep30_step4000_s0",
+      "arm": "mid",
+      "arm_label": "mid (10-25, r8)",
+      "bucket": "mid_negative_control",
+      "image_path": "/mnt/local/cherry_out/devprobe/base_rep30_step4000/u2364_lora_s0.png",
+      "judge_verdict": "no",
+      "judge_same_character": "partial",
+      "judge_confidence": 0.9,
+      "judge_note": "Missing red headband in generated image.",
+      "my_verdict": "NEGATIVE_CONTROL_CLEAN",
+      "reason": "Hand adjusting collar/ribbon is a little soft but plausible (visible fingers, thumb); face/eyes normal. Judge's 'no' is correct -- no false negative."
+    },
+    {
+      "id": "7012_lora_base_rep30_step4000_s0",
+      "arm": "mid",
+      "arm_label": "mid (10-25, r8)",
+      "bucket": "mid_negative_control",
+      "image_path": "/mnt/local/cherry_out/devprobe/base_rep30_step4000/u7012_lora_s0.png",
+      "judge_verdict": "no",
+      "judge_same_character": "no",
+      "judge_confidence": 0.99,
+      "judge_note": "Completely different facial features, age, skin tone, and eye color.",
+      "my_verdict": "NEGATIVE_CONTROL_CLEAN",
+      "reason": "Face/neck/torso proportionate; hands at bottom edge are cropped but show plausible fist shapes. Judge's 'no' is correct -- no false negative."
+    }
+  ],
+  "negative_control_false_negative_check": {
+    "method": "Each of the 4 mid-arm visible_defect=no cases was visually inspected in full for anatomical/geometric/composition damage the judge might have missed (a false negative), independent of the identity-mismatch notes the judge recorded for same_character.",
+    "result": "0 of 4 negative controls show any obvious damage the judge missed -- all 4 are clean renders (normal anatomy, no melted/missing limbs, no extra body parts). The judge's visible_defect=no calls on this sample are correct.",
+    "cases_checked": [
+      "2407_lora_base_rep30_step4000_s1",
+      "943_lora_base_rep30_step4000_s1",
+      "2364_lora_base_rep30_step4000_s0",
+      "7012_lora_base_rep30_step4000_s0"
+    ]
+  },
+  "summary": {
+    "full_depth": {
+      "arm": "full-depth (0-29, r4)",
+      "universe_visible_defect_yes": 17,
+      "sampled_n": 10,
+      "CONFIRMED": 3,
+      "BORDERLINE": 4,
+      "FALSE-POSITIVE": 3,
+      "confirmed_over_sampled": "3/10",
+      "confirmed_or_borderline_over_sampled": "7/10"
+    },
+    "late": {
+      "arm": "late (14-29, r8)",
+      "universe_visible_defect_yes": 11,
+      "sampled_n": 5,
+      "CONFIRMED": 1,
+      "BORDERLINE": 1,
+      "FALSE-POSITIVE": 3,
+      "confirmed_over_sampled": "1/5",
+      "confirmed_or_borderline_over_sampled": "2/5"
+    },
+    "mid_flags": {
+      "arm": "mid (10-25, r8) -- ALL visible_defect=yes cases (not a sample)",
+      "universe_visible_defect_yes": 2,
+      "sampled_n": 2,
+      "CONFIRMED": 0,
+      "BORDERLINE": 2,
+      "FALSE-POSITIVE": 0,
+      "confirmed_over_sampled": "0/2",
+      "confirmed_or_borderline_over_sampled": "2/2"
+    },
+    "negative_controls": {
+      "arm": "mid (10-25, r8) visible_defect=no",
+      "sampled_n": 4,
+      "false_negatives_found": 0
+    },
+    "overall_read": "PARTIAL SUPPORT, with an important caveat about judge precision. (1) Real damage is not judge noise: full-depth's flagged sample contains 3/10 unambiguous CONFIRMED severe defects (a hand fully dissolving into fabric folds with no fingers, a hand reduced to a featureless blob gripping cloth, and a jarring two-texture hair splice) plus 4/10 BORDERLINE real-but-mild oddities -- 7/10 (70%) of sampled full-depth flags correspond to something genuinely visible in the image, not nothing. The 4 mid-arm negative controls are all clean (0/4 false negatives), so the judge is not just flagging at random regardless of image content. (2) The full-depth arm's CONFIRMED rate (3/10=30%) is the highest of the three arms sampled (late 1/5=20%, mid 0/2=0%), and its confirmed cases include the most severe failure mode observed in this audit (limbs terminating with no hand at all) -- this directionally supports the paper's ranking (full-depth worse than mid), though n=10/5/2 is too small for a precise statistical claim. (3) But the judge is meaningfully noisy: FALSE-POSITIVE rate is 3/10 (30%) in full-depth and 3/5 (60%) in late -- most strikingly, one late-arm flag ('three arms/hands') is simply factually wrong (the image clearly has two), and multiple flags in both arms mislabel coherent-but-unusual character designs (an anthro rat face, a bunny mask) as 'garbled' when they are actually clean, deliberate renders -- an identity/uncanniness-driven false alarm pattern, not anatomy breakage. CONCLUSION: the paper's claim that the full-depth defect gradient reflects real damage (not pure judge artifact) holds up on this audit -- but the raw 17/11/... visible_defect=yes COUNTS overstate true severe-defect rates by roughly a third to two-thirds depending on arm, and the paper should not present those raw counts as if every flag were a severe defect. Applying this sample's CONFIRMED-or-BORDERLINE ('real, not nothing') rate per arm to each arm's full flagged population as a rough precision correction: full-depth ~17*0.70=~12 real-ish cases, late ~11*0.40=~4-5, mid =2 (both of its only 2 flags real-but-mild) -- the gradient direction (full-depth > late > mid) survives the correction, and the 4 clean negative controls further argue against 'it's all noise'. This is a directional read only (n=10/5/2 per arm), not a replacement for a full re-annotation. Recommend the paper cite this audit's CONFIRMED-only and CONFIRMED-or-BORDERLINE rates alongside (or instead of) the raw judge flag counts, and note the two concrete judge false-positive patterns found (uncanny-but-coherent character designs; occasional outright hallucinated content)."
+  },
+  "artifacts": {
+    "contact_sheet_1": "data/random_defect_audit_contactsheet.png",
+    "contact_sheet_2": "data/random_defect_audit_contactsheet_2.png",
+    "this_file": "data/random_defect_audit_band_ablation.json"
+  }
+}

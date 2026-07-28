@@ -1,0 +1,38 @@
+[2026-07-17T04:51:04Z] === smoke ccip (--loss_ccip=0.05) start ===
+[2026-07-17T05:07:00Z] === sanity off (NO aux flags, 3 steps) start ===
+[2026-07-17T07:51:04Z] GPU free=143155MiB >= 42000MiB, proceeding
+[2026-07-17T07:51:29Z] [sanity:off] done, log at /mnt/local/cherry_out/trainlight/pilot2_sanity_off_train.log, train_log.jsonl at /mnt/local/cherry_out/trainlight/_pilot2_sanity_off/train_log.jsonl
+[2026-07-17T07:51:29Z] === smoke ccip (--loss_ccip=0.05) start ===
+[2026-07-17T07:51:29Z] GPU free=143155MiB >= 42000MiB, proceeding
+[20:09:51] === pilot2 eval start ===
+[20:09:51] [link] ccip: /mnt/local/cherry_out/trainlight/run_pilot_ccip/ckptlink_pilot_ccip -> /mnt/local/cherry_out/trainlight/run_pilot_ccip/step_1500
+[20:09:51] [link] perc: /mnt/local/cherry_out/trainlight/run_pilot_perc/ckptlink_pilot_perc -> /mnt/local/cherry_out/trainlight/run_pilot_perc/step_1500
+[20:09:51] [link] baseline: /mnt/local/cherry_out/trainlight/run_pilot_baseline/ckptlink_pilot_baseline -> /mnt/local/cherry_out/trainlight/run_pilot_baseline/step_1500
+[20:09:51] [gen] arm=ccip: generating via probe/46_devprobe.py --adapter /mnt/local/cherry_out/trainlight/run_pilot_ccip/ckptlink_pilot_ccip (0/24 already present)
+[20:23:15] [gen] arm=ccip: 24/24 images at /mnt/local/cherry_out/devprobe/lora_ckptlink_pilot_ccip
+[20:23:15] [gen] arm=perc: generating via probe/46_devprobe.py --adapter /mnt/local/cherry_out/trainlight/run_pilot_perc/ckptlink_pilot_perc (0/24 already present)
+[20:36:42] [gen] arm=perc: 24/24 images at /mnt/local/cherry_out/devprobe/lora_ckptlink_pilot_perc
+[20:36:42] [gen] arm=baseline: generating via probe/46_devprobe.py --adapter /mnt/local/cherry_out/trainlight/run_pilot_baseline/ckptlink_pilot_baseline (0/24 already present)
+[20:50:08] [gen] arm=baseline: 24/24 images at /mnt/local/cherry_out/devprobe/lora_ckptlink_pilot_baseline
+[20:50:08] [judge] arm=ccip: judging via probe/38_gemini_judge.py --set devprobe_lora (DEVPROBE_LORA_DIR=lora_ckptlink_pilot_ccip)
+[20:51:36] [judge] arm=ccip: wrote /home/ubuntu/chengyanli/items/cherry/probe/../data/gemini_judge_devprobe_lora_pilot_ccip.json
+[20:51:36] [judge] arm=perc: judging via probe/38_gemini_judge.py --set devprobe_lora (DEVPROBE_LORA_DIR=lora_ckptlink_pilot_perc)
+[20:53:06] [judge] arm=perc: wrote /home/ubuntu/chengyanli/items/cherry/probe/../data/gemini_judge_devprobe_lora_pilot_perc.json
+[20:53:06] [judge] arm=baseline: judging via probe/38_gemini_judge.py --set devprobe_lora (DEVPROBE_LORA_DIR=lora_ckptlink_pilot_baseline)
+[20:54:34] [judge] arm=baseline: wrote /home/ubuntu/chengyanli/items/cherry/probe/../data/gemini_judge_devprobe_lora_pilot_baseline.json
+[20:54:37] [ccip] ref-vs-ref self-cosine sanity check: 1.000000 (expect ~1.0)
+[20:54:37] [ccip] arm=ccip: 24 gen/ref pairs found
+[20:54:40] [ccip] arm=ccip: mean cosine sim=0.6860636870066324 (n=24)
+[20:54:40] [ccip] arm=perc: 24 gen/ref pairs found
+[20:54:42] [ccip] arm=perc: mean cosine sim=0.6726377879579862 (n=24)
+[20:54:42] [ccip] arm=baseline: 24 gen/ref pairs found
+[20:54:44] [ccip] arm=baseline: mean cosine sim=0.6460321272412936 (n=24)
+[20:54:44] wrote /home/ubuntu/chengyanli/items/cherry/probe/../data/pilot2_summary.json
+[20:54:44] === pilot2 smoke-gate digest ===
+[20:54:44] baseline (run_pilot_baseline/step_1500, clean mix3 mse-only): windowed_mean_mse=0.4263743031024933 defect_rate=0.08333333333333333 same_char_yes_rate=0.20833333333333334 ccip_cosine_sim=0.6460321272412936
+[20:54:44] arm=ccip weight=0.05: ENGINEERING mse=0.42801416516304014 (delta_vs_baseline=0.0016398620605468373) nan_count=0 | KILL-CHECK defect_rate=0.20833333333333334 worse_than_baseline=True | DIRECTION same_char_yes_rate=0.125 ccip_cosine_sim=0.6860636870066324 (delta_vs_baseline=0.0400315597653389)
+[20:54:44] arm=perc weight=0.1: ENGINEERING mse=0.42859276592731477 (delta_vs_baseline=0.0022184628248214655) nan_count=0 | KILL-CHECK defect_rate=0.125 worse_than_baseline=True | DIRECTION same_char_yes_rate=0.041666666666666664 ccip_cosine_sim=0.6726377879579862 (delta_vs_baseline=0.02660566071669268)
+[20:54:44] protocol reminder: PILOT (pre-registered smoke gate, NOT final evidence) -- n=24 images/arm (12 subjects x 2 seeds, devprobe12 dev-set), n=1 training seed/arm, 1500 steps only. Numbers below are directional smoke-gate signals, not paper evidence.
+[20:54:44] full structured report: /home/ubuntu/chengyanli/items/cherry/probe/../data/pilot2_summary.json
+[20:54:44] === pilot2 eval done ===
+[20:54:44] === pilot2 all done ===

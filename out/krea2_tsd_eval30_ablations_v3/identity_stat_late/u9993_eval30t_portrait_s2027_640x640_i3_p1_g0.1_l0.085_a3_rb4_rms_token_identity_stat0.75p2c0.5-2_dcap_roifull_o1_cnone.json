@@ -1,0 +1,535 @@
+{
+  "method": "krea2_same_space_identity_score_distillation",
+  "formula": "d_edit=v_teacher-v_text; d_ref=v_lora_off_reference-v_text; delta_s=-(1-sigma)/sigma*((1-w_t)*d_edit+w_t*d_edit*clip(RMS_tokens(d_ref)/RMS_tokens(d_edit),g_min,g_max))",
+  "teacher_scheduler_usage": "none_in_distilled_trajectory",
+  "deployment_conditioning": "text_only_automatic_visible_attributes",
+  "controls": "none",
+  "base_model": "/mnt/local/krea2_edit_serve/models/Krea-2-Turbo",
+  "teacher_lora": "/mnt/local/krea2_edit_serve/models/lora/krea2_identity_edit_v1_2.safetensors",
+  "ref_boost": 4.0,
+  "reference": "/home/ubuntu/chengyanli/items/cherry/out/krea2_eval30_refs/u9993_identity.png",
+  "uid": "u9993_eval30t_portrait",
+  "negative_reference": "/home/ubuntu/chengyanli/items/cherry/out/krea2_eval30_refs/u4096_identity.png",
+  "seed": 2027,
+  "size": [
+    640,
+    640
+  ],
+  "steps": 12,
+  "inner_iters": 3,
+  "lr": 0.05,
+  "pseudo_step_size": 1.0,
+  "teacher_weight": 1.0,
+  "residual_mode": "identity_stat",
+  "identity_anchor_weight": 0.75,
+  "identity_anchor_power": 2.0,
+  "identity_stat_gain_bounds": [
+    0.5,
+    2.0
+  ],
+  "active_window": [
+    0.0,
+    1.0
+  ],
+  "normalize": "rms_token",
+  "trust_region_rms": 0.1,
+  "local_trust_region_rms": 0.085,
+  "adaptive_trust_ratio": 3.0,
+  "distill_roi": null,
+  "outside_weight": 1.0,
+  "scene_prompt": "single anime woman in a centered close-up head-and-shoulders portrait inside a modern glass atrium, soft daylight, detailed face, looking toward the camera, coherent anatomy, no other people",
+  "caption_prompt": "Create a high-quality anime illustration of one woman as the only subject. Visible attributes: a young woman, with black long hair, brown eyes, wearing glasses. Depict her in a centered close-up head-and-shoulders portrait inside a modern glass atrium, soft daylight, detailed face, looking toward the camera, coherent anatomy, no other people. No collage and no split panel.",
+  "caption_conditioning": "text_only_no_reference_tokens_or_latents",
+  "teacher_prompt": "Create a high-quality anime illustration of the exact woman shown in the reference image as the only subject. Automatically extracted visible attributes: a young woman, with black long hair, brown eyes, wearing glasses. Use the reference image for identity details beyond this short attribute list. Preserve her identity without inventing a different person. Depict her in a centered close-up head-and-shoulders portrait inside a modern glass atrium, soft daylight, detailed face, looking toward the camera, coherent anatomy, no other people. Do not copy the reference background, framing, or pose. No collage and no split panel.",
+  "negative_teacher_prompt": "Create a high-quality anime illustration of the exact woman shown in the reference image as the only subject. Automatically extracted visible attributes: a young woman, with purple braided hair, purple eyes. Use the reference image for identity details beyond this short attribute list. Preserve her identity without inventing a different person. Depict her in a centered close-up head-and-shoulders portrait inside a modern glass atrium, soft daylight, detailed face, looking toward the camera, coherent anatomy, no other people. Do not copy the reference background, framing, or pose. No collage and no split panel.",
+  "outputs": {
+    "distilled": "/home/ubuntu/chengyanli/items/cherry/out/krea2_tsd_eval30_ablations_v3/identity_stat_late/u9993_eval30t_portrait_s2027_640x640_i3_p1_g0.1_l0.085_a3_rb4_rms_token_identity_stat0.75p2c0.5-2_dcap_roifull_o1_cnone_distilled.png"
+  },
+  "diagnostics": [
+    {
+      "outer_after_step": 0,
+      "next_timestep": 972.0202026367188,
+      "sigma": 0.9720202088356018,
+      "progress": 0.09090909090909091,
+      "inner": [
+        {
+          "inner": 0,
+          "loss": 0.5,
+          "delta_v_rms": 1.174904465675354,
+          "delta_s_rms": 0.03381985425949097,
+          "delta_sigma": 0.03157603740692139,
+          "global_radius": 0.1,
+          "local_radius": 0.085,
+          "anchor_global_rms": 0.050020016729831696,
+          "anchor_max_token_rms": 0.050836510956287384,
+          "identity_anchor_weight": 0.006198347107438017
+        },
+        {
+          "inner": 1,
+          "loss": 0.5,
+          "delta_v_rms": 0.9488247632980347,
+          "delta_s_rms": 0.027312105521559715,
+          "delta_sigma": 0.03157603740692139,
+          "global_radius": 0.08988037865553622,
+          "local_radius": 0.07639832185720578,
+          "anchor_global_rms": 0.07491166144609451,
+          "anchor_max_token_rms": 0.0763983353972435,
+          "identity_anchor_weight": 0.006198347107438017
+        },
+        {
+          "inner": 2,
+          "loss": 0.5,
+          "delta_v_rms": 0.7902722954750061,
+          "delta_s_rms": 0.02274814061820507,
+          "delta_sigma": 0.03157603740692139,
+          "global_radius": 0.07486100269071727,
+          "local_radius": 0.06363185228710967,
+          "anchor_global_rms": 0.06288637965917587,
+          "anchor_max_token_rms": 0.06363186240196228,
+          "identity_anchor_weight": 0.006198347107438017
+        }
+      ]
+    },
+    {
+      "outer_after_step": 1,
+      "next_timestep": 940.4441528320312,
+      "sigma": 0.9404441714286804,
+      "progress": 0.18181818181818182,
+      "inner": [
+        {
+          "inner": 0,
+          "loss": 0.5,
+          "delta_v_rms": 0.8927065134048462,
+          "delta_s_rms": 0.056532733142375946,
+          "delta_sigma": 0.03591340780258179,
+          "global_radius": 0.09618039919178756,
+          "local_radius": 0.08175333931301942,
+          "anchor_global_rms": 0.050014398992061615,
+          "anchor_max_token_rms": 0.05084770545363426,
+          "identity_anchor_weight": 0.024793388429752067
+        },
+        {
+          "inner": 1,
+          "loss": 0.5,
+          "delta_v_rms": 0.7373977899551392,
+          "delta_s_rms": 0.04669743776321411,
+          "delta_sigma": 0.03591340780258179,
+          "global_radius": 0.07944740263014438,
+          "local_radius": 0.06753029223562272,
+          "anchor_global_rms": 0.06573840975761414,
+          "anchor_max_token_rms": 0.06753029674291611,
+          "identity_anchor_weight": 0.024793388429752067
+        },
+        {
+          "inner": 2,
+          "loss": 0.5,
+          "delta_v_rms": 0.8943756222724915,
+          "delta_s_rms": 0.056638434529304504,
+          "delta_sigma": 0.03591340780258179,
+          "global_radius": 0.09636022935407951,
+          "local_radius": 0.08190619495096758,
+          "anchor_global_rms": 0.08128725737333298,
+          "anchor_max_token_rms": 0.08190620690584183,
+          "identity_anchor_weight": 0.024793388429752067
+        }
+      ]
+    },
+    {
+      "outer_after_step": 2,
+      "next_timestep": 904.53076171875,
+      "sigma": 0.9045307636260986,
+      "progress": 0.2727272727272727,
+      "inner": [
+        {
+          "inner": 0,
+          "loss": 0.5,
+          "delta_v_rms": 0.6376795172691345,
+          "delta_s_rms": 0.06730426102876663,
+          "delta_sigma": 0.041210293769836426,
+          "global_radius": 0.07883688071300554,
+          "local_radius": 0.0670113486060547,
+          "anchor_global_rms": 0.05001506954431534,
+          "anchor_max_token_rms": 0.05062749981880188,
+          "identity_anchor_weight": 0.05578512396694214
+        },
+        {
+          "inner": 1,
+          "loss": 0.5,
+          "delta_v_rms": 0.6105764508247375,
+          "delta_s_rms": 0.0644436627626419,
+          "delta_sigma": 0.041210293769836426,
+          "global_radius": 0.07548610472229456,
+          "local_radius": 0.06416318901395036,
+          "anchor_global_rms": 0.06324724107980728,
+          "anchor_max_token_rms": 0.0641631931066513,
+          "identity_anchor_weight": 0.05578512396694214
+        },
+        {
+          "inner": 2,
+          "loss": 0.5,
+          "delta_v_rms": 0.6857423186302185,
+          "delta_s_rms": 0.07237707823514938,
+          "delta_sigma": 0.041210293769836426,
+          "global_radius": 0.08477892720348024,
+          "local_radius": 0.0720620881229582,
+          "anchor_global_rms": 0.07161986827850342,
+          "anchor_max_token_rms": 0.07206210494041443,
+          "identity_anchor_weight": 0.05578512396694214
+        }
+      ]
+    },
+    {
+      "outer_after_step": 3,
+      "next_timestep": 863.3204956054688,
+      "sigma": 0.8633204698562622,
+      "progress": 0.36363636363636365,
+      "inner": [
+        {
+          "inner": 0,
+          "loss": 0.5,
+          "delta_v_rms": 0.520932137966156,
+          "delta_s_rms": 0.08247314393520355,
+          "delta_sigma": 0.04777228832244873,
+          "global_radius": 0.07465836087404654,
+          "local_radius": 0.06345960674293956,
+          "anchor_global_rms": 0.05001157522201538,
+          "anchor_max_token_rms": 0.05062048137187958,
+          "identity_anchor_weight": 0.09917355371900827
+        },
+        {
+          "inner": 1,
+          "loss": 0.5,
+          "delta_v_rms": 0.4660011827945709,
+          "delta_s_rms": 0.07377657294273376,
+          "delta_sigma": 0.04777228832244873,
+          "global_radius": 0.06678582858919313,
+          "local_radius": 0.05676795430081416,
+          "anchor_global_rms": 0.05522572249174118,
+          "anchor_max_token_rms": 0.056767962872982025,
+          "identity_anchor_weight": 0.09917355371900827
+        },
+        {
+          "inner": 2,
+          "loss": 0.5,
+          "delta_v_rms": 0.4927487373352051,
+          "delta_s_rms": 0.07801119983196259,
+          "delta_sigma": 0.04777228832244873,
+          "global_radius": 0.07061920425149992,
+          "local_radius": 0.06002632361377493,
+          "anchor_global_rms": 0.05967874079942703,
+          "anchor_max_token_rms": 0.06002633646130562,
+          "identity_anchor_weight": 0.09917355371900827
+        }
+      ]
+    },
+    {
+      "outer_after_step": 4,
+      "next_timestep": 815.5481567382812,
+      "sigma": 0.8155481815338135,
+      "progress": 0.45454545454545453,
+      "inner": [
+        {
+          "inner": 0,
+          "loss": 0.5,
+          "delta_v_rms": 0.36854031682014465,
+          "delta_s_rms": 0.08335244655609131,
+          "delta_sigma": 0.05603724718093872,
+          "global_radius": 0.06195595448937574,
+          "local_radius": 0.05266256131596938,
+          "anchor_global_rms": 0.050008151680231094,
+          "anchor_max_token_rms": 0.05062652751803398,
+          "identity_anchor_weight": 0.1549586776859504
+        },
+        {
+          "inner": 1,
+          "loss": 0.5,
+          "delta_v_rms": 0.312926709651947,
+          "delta_s_rms": 0.07077435404062271,
+          "delta_sigma": 0.05603724718093872,
+          "global_radius": 0.05260665413485199,
+          "local_radius": 0.04471565601462419,
+          "anchor_global_rms": 0.044452667236328125,
+          "anchor_max_token_rms": 0.04471566528081894,
+          "identity_anchor_weight": 0.1549586776859504
+        },
+        {
+          "inner": 2,
+          "loss": 0.5,
+          "delta_v_rms": 0.3303694427013397,
+          "delta_s_rms": 0.0747193694114685,
+          "delta_sigma": 0.05603724718093872,
+          "global_radius": 0.05553898236505184,
+          "local_radius": 0.04720813501029406,
+          "anchor_global_rms": 0.0468108206987381,
+          "anchor_max_token_rms": 0.04720814526081085,
+          "identity_anchor_weight": 0.1549586776859504
+        }
+      ]
+    },
+    {
+      "outer_after_step": 5,
+      "next_timestep": 759.5109252929688,
+      "sigma": 0.7595109343528748,
+      "progress": 0.5454545454545454,
+      "inner": [
+        {
+          "inner": 0,
+          "loss": 0.5,
+          "delta_v_rms": 0.3368538022041321,
+          "delta_s_rms": 0.10666028410196304,
+          "delta_sigma": 0.06665027141571045,
+          "global_radius": 0.06735419203295834,
+          "local_radius": 0.057251063228014584,
+          "anchor_global_rms": 0.050009503960609436,
+          "anchor_max_token_rms": 0.050569113343954086,
+          "identity_anchor_weight": 0.22314049586776857
+        },
+        {
+          "inner": 1,
+          "loss": 0.5,
+          "delta_v_rms": 0.29718470573425293,
+          "delta_s_rms": 0.09409960359334946,
+          "delta_sigma": 0.06665027141571045,
+          "global_radius": 0.059422323893358,
+          "local_radius": 0.0505089753093543,
+          "anchor_global_rms": 0.049201663583517075,
+          "anchor_max_token_rms": 0.05050898343324661,
+          "identity_anchor_weight": 0.22314049586776857
+        },
+        {
+          "inner": 2,
+          "loss": 0.5,
+          "delta_v_rms": 0.27911147475242615,
+          "delta_s_rms": 0.08837694674730301,
+          "delta_sigma": 0.06665027141571045,
+          "global_radius": 0.05580856664246525,
+          "local_radius": 0.04743728164609546,
+          "anchor_global_rms": 0.04668370261788368,
+          "anchor_max_token_rms": 0.047437287867069244,
+          "identity_anchor_weight": 0.22314049586776857
+        }
+      ]
+    },
+    {
+      "outer_after_step": 6,
+      "next_timestep": 692.8606567382812,
+      "sigma": 0.6928606629371643,
+      "progress": 0.6363636363636364,
+      "inner": [
+        {
+          "inner": 0,
+          "loss": 0.5,
+          "delta_v_rms": 0.30360251665115356,
+          "delta_s_rms": 0.1345844566822052,
+          "delta_sigma": 0.08059334754943848,
+          "global_radius": 0.0734050294240518,
+          "local_radius": 0.062394275010444034,
+          "anchor_global_rms": 0.05001268535852432,
+          "anchor_max_token_rms": 0.05047011002898216,
+          "identity_anchor_weight": 0.3037190082644628
+        },
+        {
+          "inner": 1,
+          "loss": 0.5,
+          "delta_v_rms": 0.2562400996685028,
+          "delta_s_rms": 0.1135890930891037,
+          "delta_sigma": 0.08059334754943848,
+          "global_radius": 0.061953742226059205,
+          "local_radius": 0.05266068089215032,
+          "anchor_global_rms": 0.05112319439649582,
+          "anchor_max_token_rms": 0.05266068875789642,
+          "identity_anchor_weight": 0.3037190082644628
+        },
+        {
+          "inner": 2,
+          "loss": 0.5,
+          "delta_v_rms": 0.24853700399398804,
+          "delta_s_rms": 0.11017437279224396,
+          "delta_sigma": 0.08059334754943848,
+          "global_radius": 0.06009128742535097,
+          "local_radius": 0.051077594311548326,
+          "anchor_global_rms": 0.05026501417160034,
+          "anchor_max_token_rms": 0.051077600568532944,
+          "identity_anchor_weight": 0.3037190082644628
+        }
+      ]
+    },
+    {
+      "outer_after_step": 7,
+      "next_timestep": 612.267333984375,
+      "sigma": 0.6122673153877258,
+      "progress": 0.7272727272727273,
+      "inner": [
+        {
+          "inner": 0,
+          "loss": 0.5,
+          "delta_v_rms": 0.26157334446907043,
+          "delta_s_rms": 0.1656474769115448,
+          "delta_sigma": 0.09942317008972168,
+          "global_radius": 0.07801935335425725,
+          "local_radius": 0.06631645035111866,
+          "anchor_global_rms": 0.05001313239336014,
+          "anchor_max_token_rms": 0.050545357167720795,
+          "identity_anchor_weight": 0.39669421487603307
+        },
+        {
+          "inner": 1,
+          "loss": 0.5,
+          "delta_v_rms": 0.22322417795658112,
+          "delta_s_rms": 0.14136196672916412,
+          "delta_sigma": 0.09942317008972168,
+          "global_radius": 0.0665809662393464,
+          "local_radius": 0.05659382130344443,
+          "anchor_global_rms": 0.05536897853016853,
+          "anchor_max_token_rms": 0.05659382790327072,
+          "identity_anchor_weight": 0.39669421487603307
+        },
+        {
+          "inner": 2,
+          "loss": 0.5,
+          "delta_v_rms": 0.2220507115125656,
+          "delta_s_rms": 0.14061883091926575,
+          "delta_sigma": 0.09942317008972168,
+          "global_radius": 0.06623095697777259,
+          "local_radius": 0.0562963134311067,
+          "anchor_global_rms": 0.05558304861187935,
+          "anchor_max_token_rms": 0.05629632622003555,
+          "identity_anchor_weight": 0.39669421487603307
+        }
+      ]
+    },
+    {
+      "outer_after_step": 8,
+      "next_timestep": 512.8441162109375,
+      "sigma": 0.5128441452980042,
+      "progress": 0.8181818181818182,
+      "inner": [
+        {
+          "inner": 0,
+          "loss": 0.5,
+          "delta_v_rms": 0.2562478482723236,
+          "delta_s_rms": 0.24341242015361786,
+          "delta_sigma": 0.12572497129440308,
+          "global_radius": 0.09665026010487132,
+          "local_radius": 0.08215272108914062,
+          "anchor_global_rms": 0.05001404508948326,
+          "anchor_max_token_rms": 0.050565868616104126,
+          "identity_anchor_weight": 0.5020661157024794
+        },
+        {
+          "inner": 1,
+          "loss": 0.5,
+          "delta_v_rms": 0.20810922980308533,
+          "delta_s_rms": 0.19768506288528442,
+          "delta_sigma": 0.12572497129440308,
+          "global_radius": 0.07849358082927971,
+          "local_radius": 0.06671954370488775,
+          "anchor_global_rms": 0.06605644524097443,
+          "anchor_max_token_rms": 0.06671955436468124,
+          "identity_anchor_weight": 0.5020661157024794
+        },
+        {
+          "inner": 2,
+          "loss": 0.5,
+          "delta_v_rms": 0.1968356966972351,
+          "delta_s_rms": 0.18697622418403625,
+          "delta_sigma": 0.12572497129440308,
+          "global_radius": 0.07424148695092114,
+          "local_radius": 0.06310526390828297,
+          "anchor_global_rms": 0.0626520961523056,
+          "anchor_max_token_rms": 0.0631052702665329,
+          "identity_anchor_weight": 0.5020661157024794
+        }
+      ]
+    },
+    {
+      "outer_after_step": 9,
+      "next_timestep": 387.1191711425781,
+      "sigma": 0.3871191740036011,
+      "progress": 0.9090909090909091,
+      "inner": [
+        {
+          "inner": 0,
+          "loss": 0.5,
+          "delta_v_rms": 0.2531050443649292,
+          "delta_s_rms": 0.40071186423301697,
+          "delta_sigma": 0.1640544831752777,
+          "global_radius": 0.1,
+          "local_radius": 0.085,
+          "anchor_global_rms": 0.05000864341855049,
+          "anchor_max_token_rms": 0.05057752877473831,
+          "identity_anchor_weight": 0.6198347107438016
+        },
+        {
+          "inner": 1,
+          "loss": 0.5,
+          "delta_v_rms": 0.21305084228515625,
+          "delta_s_rms": 0.3372986614704132,
+          "delta_sigma": 0.1640544831752777,
+          "global_radius": 0.1,
+          "local_radius": 0.085,
+          "anchor_global_rms": 0.08279430121183395,
+          "anchor_max_token_rms": 0.08500001579523087,
+          "identity_anchor_weight": 0.6198347107438016
+        },
+        {
+          "inner": 2,
+          "loss": 0.5,
+          "delta_v_rms": 0.19871653616428375,
+          "delta_s_rms": 0.31460481882095337,
+          "delta_sigma": 0.1640544831752777,
+          "global_radius": 0.09780101591643886,
+          "local_radius": 0.08313086352897303,
+          "anchor_global_rms": 0.08243260532617569,
+          "anchor_max_token_rms": 0.08313088119029999,
+          "identity_anchor_weight": 0.6198347107438016
+        }
+      ]
+    },
+    {
+      "outer_after_step": 10,
+      "next_timestep": 223.064697265625,
+      "sigma": 0.22306469082832336,
+      "progress": 1.0,
+      "inner": [
+        {
+          "inner": 0,
+          "loss": 0.5,
+          "delta_v_rms": 0.2578126788139343,
+          "delta_s_rms": 0.897962749004364,
+          "delta_sigma": 0.22306469082832336,
+          "global_radius": 0.1,
+          "local_radius": 0.085,
+          "anchor_global_rms": 0.05000627040863037,
+          "anchor_max_token_rms": 0.05059357360005379,
+          "identity_anchor_weight": 0.75
+        },
+        {
+          "inner": 1,
+          "loss": 0.5,
+          "delta_v_rms": 0.22304831445217133,
+          "delta_s_rms": 0.7768782377243042,
+          "delta_sigma": 0.22306469082832336,
+          "global_radius": 0.1,
+          "local_radius": 0.085,
+          "anchor_global_rms": 0.08343694359064102,
+          "anchor_max_token_rms": 0.08500001579523087,
+          "identity_anchor_weight": 0.75
+        },
+        {
+          "inner": 2,
+          "loss": 0.5,
+          "delta_v_rms": 0.2105509638786316,
+          "delta_s_rms": 0.7333499789237976,
+          "delta_sigma": 0.22306469082832336,
+          "global_radius": 0.1,
+          "local_radius": 0.085,
+          "anchor_global_rms": 0.08455502241849899,
+          "anchor_max_token_rms": 0.08500001579523087,
+          "identity_anchor_weight": 0.75
+        }
+      ]
+    }
+  ],
+  "elapsed_seconds": 74.1407356262207
+}
