@@ -64,7 +64,7 @@ LABELS = {
 def panel_label(ax: plt.Axes, label: str) -> None:
     ax.text(
         -0.08,
-        1.06,
+        1.02,
         label,
         transform=ax.transAxes,
         fontsize=9,
@@ -98,43 +98,12 @@ def main() -> int:
     rows = payload["rows"]
     summary = payload["summary"]
     variants = summary["variants"]
-    record = next(
-        row
-        for row in rows
-        if row["uid"] == "1070" and row["scene"] == "portrait"
-    )
 
     FIG_DIR.mkdir(parents=True, exist_ok=True)
-    fig = plt.figure(figsize=(7.2, 4.6), facecolor="white")
-    outer = fig.add_gridspec(
-        2,
-        2,
-        height_ratios=[1.15, 1.0],
-        width_ratios=[1.18, 1.0],
-        hspace=0.40,
-        wspace=0.37,
-    )
-    plate = outer[0, :].subgridspec(1, 6, wspace=0.04)
-    examples = [
-        ("reference", "Reference"),
-        ("full", "Full"),
-        ("matched_lora", "Reconstruction\nresidual"),
-        ("identity_anchor_const", "Identity\nanchor"),
-        ("identity_stat_late", "Channel\nstatistics"),
-        ("wrong_ref_same_text", "Wrong\nreference"),
-    ]
-    for index, (key, title) in enumerate(examples):
-        ax = fig.add_subplot(plate[0, index])
-        ax.imshow(Image.open(record[key]).convert("RGB"))
-        ax.set_title(title, fontsize=6.4, pad=3)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        for spine in ax.spines.values():
-            spine.set_visible(False)
-        if index == 0:
-            panel_label(ax, "a")
+    fig = plt.figure(figsize=(7.2, 3.0), facecolor="white")
+    outer = fig.add_gridspec(1, 2, width_ratios=[1.12, 1.0], wspace=0.30)
 
-    ax_b = fig.add_subplot(outer[1, 0])
+    ax_b = fig.add_subplot(outer[0, 0])
     all_variants = list(variants)
     for variant in all_variants:
         value = variants[variant]
@@ -173,24 +142,18 @@ def main() -> int:
     ax_b.set_ylim(-0.11, 0.14)
     ax_b.set_xlabel("Scene CLIP ↑")
     ax_b.set_ylabel("CCIP improvement over text ↑")
-    panel_label(ax_b, "b")
+    panel_label(ax_b, "a")
 
-    ax_c = fig.add_subplot(outer[1, 1])
+    ax_c = fig.add_subplot(outer[0, 1])
     selected = [
-        "fixed_trust",
-        "global_only",
-        "loose_trust",
-        "one_inner",
-        "global_rms",
-        "raw_score",
-        "no_ref_boost",
-        "early_window",
-        "late_window",
-        "matched_lora",
-        "identity_anchor_const",
-        "identity_stat_late",
+        "fixed_trust", "global_only", "loose_trust", "one_inner", "global_rms",
+        "raw_score", "no_ref_boost", "early_window", "late_window",
+        "matched_lora", "identity_anchor_const", "identity_stat_late",
         "wrong_ref_same_text",
     ]
+    # order the forest plot by effect size so the story (reconstruction residual
+    # and wrong reference hurt most; the rest sit near zero) reads top-to-bottom.
+    selected.sort(key=lambda key: variants[key]["delta_vs_full"], reverse=True)
     positions = np.arange(len(selected))
     means = np.asarray([variants[key]["delta_vs_full"] for key in selected])
     intervals = np.asarray(
@@ -220,16 +183,22 @@ def main() -> int:
     ax_c.set_yticks(positions, [LABELS[key] for key in selected], fontsize=5.4)
     ax_c.invert_yaxis()
     ax_c.set_xlabel("CCIP change vs full (lower is better)")
-    panel_label(ax_c, "c")
+    panel_label(ax_c, "b")
 
+    from matplotlib.lines import Line2D
+    legend_items = [("Full method", FULL), ("Trust geometry", TRUST),
+                    ("Optimization", OPT), ("Reconstruction diagnostic", DIAGNOSTIC),
+                    ("Wrong reference", NEGATIVE)]
+    handles = [Line2D([0], [0], marker="o", linestyle="none", markerfacecolor=c,
+                      markeredgecolor="white", markeredgewidth=0.4, markersize=6,
+                      label=name) for name, c in legend_items]
+    fig.legend(handles=handles, loc="center", bbox_to_anchor=(0.5, 0.885),
+               ncol=5, fontsize=6.2, handletextpad=0.25, columnspacing=1.0)
     fig.suptitle(
         "Trust regions stabilize transfer; reconstruction fields import layout",
-        x=0.50,
-        y=0.995,
-        fontsize=9,
-        fontweight="bold",
+        x=0.50, y=0.985, fontsize=9, fontweight="bold",
     )
-    fig.subplots_adjust(left=0.075, right=0.99, bottom=0.105, top=0.925)
+    fig.subplots_adjust(left=0.075, right=0.99, bottom=0.17, top=0.79)
 
     base = FIG_DIR / "mechanism_ablation"
     fig.savefig(base.with_suffix(".svg"), bbox_inches="tight", dpi=400)

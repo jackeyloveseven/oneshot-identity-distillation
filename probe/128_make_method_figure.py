@@ -160,12 +160,13 @@ def main() -> int:
     arrow(ax, (0.508, 0.60), (0.508, 0.47), OURS)
     arrow(
         ax,
-        (0.625, 0.36),
-        (0.625, 0.69),
+        (0.612, 0.36),
+        (0.612, 0.69),
         OURS,
-        connectionstyle="arc3,rad=-0.42",
+        connectionstyle="arc3,rad=-0.20",
     )
-    ax.text(0.635, 0.51, "reevaluate\n3 times", color=OURS, fontsize=5.7)
+    ax.text(0.588, 0.525, "reevaluate\n3 times", color=OURS, fontsize=5.7,
+            ha="center")
     ax.text(
         0.507,
         0.11,
@@ -200,8 +201,8 @@ def main() -> int:
     )
     arrow(ax, (0.795, 0.51), (0.855, 0.51), GREEN, lw=1.2)
     ax.text(
-        0.828,
-        0.57,
+        0.845,
+        0.452,
         "project",
         ha="center",
         fontsize=5.5,

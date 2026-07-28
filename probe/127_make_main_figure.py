@@ -96,7 +96,7 @@ def letterbox(path, size=512, bg=(255, 255, 255)):
 
 
 def _cap_box(ax, text, color):
-    ax.set_xlabel(text, fontsize=5.4, labelpad=1.5, color=color, linespacing=0.9)
+    ax.set_xlabel(text, fontsize=6.8, labelpad=1.8, color=color, linespacing=0.9)
 
 
 def main() -> int:
@@ -106,27 +106,34 @@ def main() -> int:
     vlm = payload["vlm_summary"]["majority"]
 
     FIG_DIR.mkdir(parents=True, exist_ok=True)
-    fig = plt.figure(figsize=(7.2, 6.7), facecolor="white")
-    outer = fig.add_gridspec(2, 1, height_ratios=[2.78, 1.0], hspace=0.34)
+    fig = plt.figure(figsize=(9.7, 5.4), facecolor="white")
+    outer = fig.add_gridspec(1, 2, width_ratios=[0.31, 0.69], wspace=0.08)
 
-    # ---- Panel a: hero identity x scenes x controls ----
+    # ---- Panel a: hero identity x scenes x controls (right). Reference and the
+    # aggregate panels b-e stack in the left column so it carries no blank. ----
     # Per-scene row heights track the native image aspect ratio so no image is
     # letterboxed into a square: portrait 640^2, rain 512x768, kitchen 768x512.
     scene_aspect = {"portrait": 1.0, "rain": 768 / 512, "kitchen": 512 / 768}
     row_heights = [scene_aspect[s] for s, _, _ in HERO_SCENES]
-    top = outer[0].subgridspec(1, 2, width_ratios=[1.02, 5.0], wspace=0.05)
-    ax_ref = fig.add_subplot(top[0, 0])  # square reference, vertically centred
+
+    left = outer[0, 0].subgridspec(2, 1, height_ratios=[1.12, 1.0], hspace=0.36)
+    ax_ref = fig.add_subplot(left[0, 0])  # large reference, top-left
     ref_path = selected_row(rows, HERO, "portrait", 2027)["reference"]
     ax_ref.imshow(Image.open(ref_path).convert("RGB"))
     ax_ref.set_xticks([]); ax_ref.set_yticks([])
     for sp in ax_ref.spines.values():
         sp.set_visible(True); sp.set_edgecolor(COLORS["ink"]); sp.set_linewidth(1.3)
-    ax_ref.set_title("Reference", fontsize=7.5, pad=3)
-    ax_ref.set_xlabel("target identity\n(dark skin, wavy\nhair, earrings)",
-                      fontsize=5.6, labelpad=2, linespacing=1.0)
+    ax_ref.set_title("Reference (target identity)", fontsize=7.2, pad=3)
+    panel_label(ax_ref, "a")
 
-    hero = top[0, 1].subgridspec(3, len(HERO_ARMS), wspace=0.05, hspace=0.16,
-                                 height_ratios=row_heights)
+    quad = left[1, 0].subgridspec(2, 2, wspace=0.75, hspace=0.85)
+    ax_b = fig.add_subplot(quad[0, 0])
+    ax_c = fig.add_subplot(quad[0, 1])
+    ax_d = fig.add_subplot(quad[1, 0])
+    ax_e = fig.add_subplot(quad[1, 1])
+
+    hero = outer[0, 1].subgridspec(3, len(HERO_ARMS), wspace=0.05, hspace=0.16,
+                                   height_ratios=row_heights)
     for ri, (scene, seed, rlabel) in enumerate(HERO_SCENES):
         record = selected_row(rows, HERO, scene, seed)
         for ci, (key, title, edge, lw) in enumerate(HERO_ARMS):
@@ -139,30 +146,17 @@ def main() -> int:
                 ax.set_title(title, fontsize=6.6,
                              fontweight="bold" if key == "distilled" else "normal",
                              pad=2)
-                if ci == 0:
-                    panel_label(ax, "a")
             ccip = float(record[f"{key}_ccip"])
-            if key == "matched_control":
-                l1 = float(record["matched_control_pixel_l1_reference"])
-                _cap_box(ax, f"CCIP {ccip:.3f}\nL1 {l1:.2f} paste", edge)
-            else:
-                top1 = bool(record.get(f"{key}_retrieval_top1"))
-                mark = " ✓" if top1 else " ✗"
-                cap_color = COLORS["ink"] if top1 else COLORS["negative"]
-                if key == "distilled":
-                    l1 = float(record["distilled_pixel_l1_reference"])
-                    _cap_box(ax, f"CCIP {ccip:.3f}{mark}\nL1 {l1:.2f}", COLORS["ink"])
-                else:
-                    _cap_box(ax, f"CCIP {ccip:.3f}{mark}", cap_color)
+            top1 = bool(record.get(f"{key}_retrieval_top1"))
+            mark = " ✓" if top1 else " ✗"
+            cap_color = COLORS["ink"] if (top1 or key == "distilled") else COLORS["negative"]
+            _cap_box(ax, f"CCIP {ccip:.3f}{mark}", cap_color)
             if ci == 0:
                 ax.text(-0.13, 0.5, rlabel, transform=ax.transAxes, rotation=90,
                         ha="center", va="center", fontsize=6.4, fontweight="bold")
 
     # ---- Panels b-e: aggregate quantitative evidence (all 180 observations) ----
     methods = ["caption_base", "distilled", "teacher"]
-    bottom = outer[1].subgridspec(1, 4, wspace=0.52)
-
-    ax_b = fig.add_subplot(bottom[0, 0])
     positions = np.arange(3)
     for index, method in enumerate(methods):
         values = subject_means(rows, f"{method}_ccip")
@@ -174,37 +168,31 @@ def main() -> int:
                   color=COLORS["ink"], lw=1.4, zorder=4)
     ax_b.axhline(0.178, color="#767676", lw=0.8, ls="--")
     ax_b.text(2.45, 0.183, "same-ID", fontsize=5.2, ha="right")
-    ax_b.set_xticks(positions, ["Text", "Ours", "Teach"], rotation=18)
+    ax_b.set_xticks(positions, ["Text", "Ours", "Teacher"], rotation=18)
     ax_b.set_ylabel("CCIP distance ↓")
     ax_b.set_ylim(0, 0.31)
     panel_label(ax_b, "b")
 
-    ax_c = fig.add_subplot(bottom[0, 1])
     retrieval = summary["retrieval"]
     retrieval_values = [100.0 * retrieval[m]["top1"] / summary["n"] for m in methods]
     bars = ax_c.bar(positions, retrieval_values, width=0.68,
                     color=[COLORS[m] for m in methods], edgecolor="white", linewidth=0.6)
     ax_c.bar_label(bars, labels=[f"{v:.1f}" for v in retrieval_values], padding=2, fontsize=6)
-    ax_c.set_xticks(positions, ["Text", "Ours", "Teach"], rotation=18)
+    ax_c.set_xticks(positions, ["Text", "Ours", "Teacher"], rotation=18)
     ax_c.set_ylim(0, 105)
     ax_c.set_ylabel("30-way Top-1 (%) ↑")
     panel_label(ax_c, "c")
 
-    ax_d = fig.add_subplot(bottom[0, 2])
     identity_values = [100.0 * vlm[m]["identity_score"] for m in methods]
     defect_values = [100.0 * vlm[m]["defect_rate"] for m in methods]
     bars = ax_d.bar(positions, identity_values, width=0.68,
                     color=[COLORS[m] for m in methods], edgecolor="white", linewidth=0.6)
     ax_d.bar_label(bars, labels=[f"{v:.1f}" for v in identity_values], padding=2, fontsize=6)
-    ax_d.scatter(positions, defect_values, marker="v", s=20, color=COLORS["negative"],
-                 zorder=4, label="defect")
-    ax_d.set_xticks(positions, ["Text", "Ours", "Teach"], rotation=18)
+    ax_d.set_xticks(positions, ["Text", "Ours", "Teacher"], rotation=18)
     ax_d.set_ylim(0, 105)
     ax_d.set_ylabel("VLM identity (%) ↑")
-    ax_d.legend(fontsize=5.4, loc="lower right")
     panel_label(ax_d, "d")
 
-    ax_e = fig.add_subplot(bottom[0, 3])
     comparisons = summary["comparisons"]
     delta_names = ["Identity", "Scene", "Aesth."]
     delta_values = [comparisons["gain_vs_caption"]["mean"],
@@ -228,11 +216,7 @@ def main() -> int:
                   ha=align, va="center", fontsize=5.6, color=tc)
     panel_label(ax_e, "e")
 
-    fig.suptitle(
-        "One identity across three re-posed scenes: the correct reference drives "
-        "identity everywhere, while a same-class wrong reference collapses it",
-        x=0.5, y=0.995, fontsize=8.4, fontweight="bold")
-    fig.subplots_adjust(left=0.055, right=0.997, bottom=0.075, top=0.94)
+    fig.subplots_adjust(left=0.045, right=0.996, bottom=0.065, top=0.95)
 
     base = FIG_DIR / "main_eval30"
     fig.savefig(base.with_suffix(".svg"), bbox_inches="tight", dpi=400)

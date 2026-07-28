@@ -14,7 +14,19 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 from PIL import Image
+
+
+def trim_white(im):
+    """Crop away fully-white border bands (the reference head-crops are padded
+    with white above the character); keeps the gray character-sheet background."""
+    a = np.asarray(im.convert("L"))
+    rows = np.where(a.min(axis=1) < 250)[0]
+    cols = np.where(a.min(axis=0) < 250)[0]
+    if len(rows) and len(cols):
+        return im.crop((int(cols[0]), int(rows[0]), int(cols[-1]) + 1, int(rows[-1]) + 1))
+    return im
 
 ROOT = Path(__file__).resolve().parents[1]
 SHOW = ROOT / "out" / "df_showcase_pilot"
@@ -40,7 +52,7 @@ COLS = [("reference", "Reference"), ("rain", "Rain street"), ("kitchen", "Kitche
 
 def load(ident, key):
     if key == "reference":
-        return Image.open(SHOW / "refs" / f"{ident}.png").convert("RGB")
+        return trim_white(Image.open(SHOW / "refs" / f"{ident}.png").convert("RGB"))
     hit = glob.glob(str(SHOW / f"{ident}_{key}_*_distilled.png"))
     return Image.open(hit[0]).convert("RGB") if hit else None
 
