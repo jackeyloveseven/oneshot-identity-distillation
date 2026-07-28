@@ -236,8 +236,8 @@ def main() -> int:
     fig.subplots_adjust(left=0.055, right=0.997, bottom=0.075, top=0.94)
 
     base = FIG_DIR / "main_eval30"
-    fig.savefig(base.with_suffix(".svg"), bbox_inches="tight")
-    fig.savefig(base.with_suffix(".pdf"), bbox_inches="tight")
+    fig.savefig(base.with_suffix(".svg"), bbox_inches="tight", dpi=400)
+    fig.savefig(base.with_suffix(".pdf"), bbox_inches="tight", dpi=400)
     fig.savefig(base.with_suffix(".tiff"), dpi=600, bbox_inches="tight")
     fig.savefig(base.with_suffix(".png"), dpi=300, bbox_inches="tight")
     plt.close(fig)

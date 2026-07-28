@@ -232,8 +232,8 @@ def main() -> int:
     fig.subplots_adjust(left=0.075, right=0.99, bottom=0.105, top=0.925)
 
     base = FIG_DIR / "mechanism_ablation"
-    fig.savefig(base.with_suffix(".svg"), bbox_inches="tight")
-    fig.savefig(base.with_suffix(".pdf"), bbox_inches="tight")
+    fig.savefig(base.with_suffix(".svg"), bbox_inches="tight", dpi=400)
+    fig.savefig(base.with_suffix(".pdf"), bbox_inches="tight", dpi=400)
     fig.savefig(base.with_suffix(".tiff"), dpi=600, bbox_inches="tight")
     fig.savefig(base.with_suffix(".png"), dpi=300, bbox_inches="tight")
     plt.close(fig)

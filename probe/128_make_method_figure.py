@@ -219,8 +219,8 @@ def main() -> int:
 
     fig.subplots_adjust(left=0.01, right=0.995, bottom=0.03, top=0.98)
     base = OUT / "method_score_distillation"
-    fig.savefig(base.with_suffix(".svg"), bbox_inches="tight")
-    fig.savefig(base.with_suffix(".pdf"), bbox_inches="tight")
+    fig.savefig(base.with_suffix(".svg"), bbox_inches="tight", dpi=400)
+    fig.savefig(base.with_suffix(".pdf"), bbox_inches="tight", dpi=400)
     fig.savefig(base.with_suffix(".tiff"), dpi=600, bbox_inches="tight")
     fig.savefig(base.with_suffix(".png"), dpi=300, bbox_inches="tight")
     plt.close(fig)

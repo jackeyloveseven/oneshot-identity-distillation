@@ -71,7 +71,7 @@ fig.suptitle("Extended identity-transfer gallery: 12 held-out subjects across th
              fontsize=10, fontweight="bold", y=0.997)
 fig.subplots_adjust(left=0.10, right=0.997, top=0.965, bottom=0.006)
 base = FIG / "supp_gallery"
-for ext, kw in [(".pdf", {}), (".svg", {}), (".png", {"dpi": 200}), (".tiff", {"dpi": 300})]:
+for ext, kw in [(".pdf", {"dpi": 300}), (".svg", {"dpi": 300}), (".png", {"dpi": 200}), (".tiff", {"dpi": 300})]:
     fig.savefig(base.with_suffix(ext), bbox_inches="tight", **kw)
 plt.close(fig)
 
