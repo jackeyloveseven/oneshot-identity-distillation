@@ -44,15 +44,16 @@ from diffusers.models.transformers.transformer_krea2 import Krea2AttnProcessor
 from diffusers.pipelines.krea2.pipeline_krea2 import retrieve_timesteps
 
 
-ROOT = Path("/mnt/local/krea2_edit_serve/models")
-BASE_MODEL = ROOT / "Krea-2-Turbo"
-LORA_PATH = ROOT / "lora" / "krea2_identity_edit_v1_1.safetensors"
-PROCESSOR_MODEL = ROOT / "Qwen3-VL-4B-Instruct"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+MODEL_ROOT = PROJECT_ROOT / "models"
+BASE_MODEL = MODEL_ROOT / "Krea-2-Turbo"
+LORA_PATH = MODEL_ROOT / "lora" / "krea2_identity_edit_v1_1.safetensors"
+PROCESSOR_MODEL = MODEL_ROOT / "Qwen3-VL-4B-Instruct"
 DEFAULT_REF = Path("/mnt/local/smoke_anime/anime_260623/img/u4229_whiteref.png")
 DEFAULT_NEGATIVE_REF = Path(
     "/mnt/local/smoke_anime/anime_260623/img/u1839_whiteref.png"
 )
-DEFAULT_OUT = Path("/home/ubuntu/chengyanli/items/cherry/out/krea2_tsd")
+DEFAULT_OUT = PROJECT_ROOT / "out" / "krea2_tsd"
 DTYPE = torch.bfloat16
 
 SCENE_PROMPT = (

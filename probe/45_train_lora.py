@@ -83,7 +83,7 @@ import torch.nn.functional as F
 HERE = os.path.dirname(os.path.abspath(__file__))
 REF_IMG_DIR = "/mnt/local/smoke_anime/anime_260623/img"
 RECAP_META = "/mnt/local/smoke_anime/anime_30k_recap/metadata.jsonl"
-OUT_DIR = "/mnt/local/cherry_out/trainlight"
+OUT_DIR = "out/trainlight"
 DEV = "cuda"
 
 # LoRA capacity: design doc S3 "推荐" section -- 3b main path, capacity

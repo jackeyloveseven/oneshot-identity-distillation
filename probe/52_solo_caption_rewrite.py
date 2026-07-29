@@ -38,7 +38,7 @@ Caption construction per solo_clean row:
      solo/1girl/1boy/2girls/2boys/multiple_girls/multiple_boys person-count
      tags used by 49's classifier, nowhere near enough to build a scene-aware
      caption). Result cached one-line-per-uid to a NEW cache file,
-     /mnt/local/cherry_out/trainlight/wd14_solo_full_cache.jsonl (full
+     out/trainlight/wd14_solo_full_cache.jsonl (full
      `general` dict, not a subset -- resumable/appendable like 48's cache).
   2. Identity phrase: PRECISE reuse of probe/41_holdout_eval.py stage_tags()'s
      wd14->prompt machinery, imported (not copied) from probe/31_tagprior.py
@@ -119,7 +119,7 @@ MIX_REPORT_IN = os.path.join(DATA, "manifest_mix_report.json")
 MANIFEST_OUT = os.path.join(DATA, "train_manifest_mix2.jsonl")
 REPORT_OUT = os.path.join(DATA, "manifest_mix2_report.json")
 
-CACHE_DIR = "/mnt/local/cherry_out/trainlight"
+CACHE_DIR = "out/trainlight"
 FULL_CACHE_PATH = os.path.join(CACHE_DIR, "wd14_solo_full_cache.jsonl")
 
 WD14_MODEL = "SwinV2_v3"

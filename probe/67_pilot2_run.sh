@@ -37,7 +37,7 @@ export REF=/mnt/local/smoke_anime/anime_260623/img   # env.sh's default REF (rev
                                                        # absolute paths) but kept for consistency /
                                                        # in case this script is ever extended.
 
-LOG_DIR=/mnt/local/cherry_out/trainlight
+LOG_DIR=out/trainlight
 SUMMARY=data/pilot2_summary.txt
 mkdir -p "$LOG_DIR"
 

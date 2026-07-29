@@ -119,11 +119,11 @@ Run (GPU step -- checks nvidia-smi free>=30G first, polls every 120s if not):
                                                          # probe/46_devprobe.py
                                                          # uses.
   $PY 54_its_sample.py --ref 4416 \
-      --adapter /mnt/local/cherry_out/trainlight/run_mix1/step_4000 \
+      --adapter out/trainlight/run_mix1/step_4000 \
       --prompt "In an anime_2d style, solo, ..." \
       --cap_ref "an anime illustration of a character" \
       --select quality_ccip \
-      --out /mnt/local/cherry_out/devprobe/its_smoke
+      --out out/devprobe/its_smoke
   # --select defaults to "ccip" (legacy, backward-compatible winner selection);
   # pass --select quality_ccip to enable the defect-aware quality gate.
 """

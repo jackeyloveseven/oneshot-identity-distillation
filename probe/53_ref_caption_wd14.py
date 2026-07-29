@@ -23,7 +23,7 @@ Inputs (read-only):
     starting with "_"); ref path is the same REF_IMG_DIR template.
 
 Outputs:
-  - /mnt/local/cherry_out/trainlight/wd14_ref_cache.jsonl  -- one line per
+  - out/trainlight/wd14_ref_cache.jsonl  -- one line per
     uid, {"uid","rating","general"} at general_threshold=0.3 (the "fetch
     wide, filter downstream" convention probe/48_clean_manifest.py /
     probe/52_solo_caption_rewrite.py already use), fsync'd per line so a
@@ -78,7 +78,7 @@ DEVPROBE_TAGS_IN = os.path.join(DATA, "devprobe12_tags.json")
 DEVPROBE_REFCAPS_OUT = os.path.join(DATA, "devprobe12_refcaps.json")
 REPORT_OUT = os.path.join(DATA, "manifest_mix3_report.json")
 
-CACHE_DIR = "/mnt/local/cherry_out/trainlight"
+CACHE_DIR = "out/trainlight"
 CACHE_PATH = os.path.join(CACHE_DIR, "wd14_ref_cache.jsonl")
 REF_IMG_DIR = "/mnt/local/smoke_anime/anime_260623/img"  # == 45_train_lora.REF_IMG_DIR
                                                           # == 46_devprobe.REF_IMG_DIR default

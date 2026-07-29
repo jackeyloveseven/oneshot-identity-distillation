@@ -45,7 +45,7 @@ cd "$(dirname "$0")/.."   # -> cherry/
 source env.sh
 export REF=/mnt/local/smoke_anime/anime_260623/img   # env.sh's default REF (revref_30k) is dead; see probe/56 docstring
 
-LOG_DIR=/mnt/local/cherry_out/trainlight
+LOG_DIR=out/trainlight
 SUMMARY=data/band_ablation_summary.txt
 mkdir -p "$LOG_DIR"
 echo "=== band ablation orchestrator start $(date -u +%Y-%m-%dT%H:%M:%SZ) ===" > "$SUMMARY"
@@ -107,7 +107,7 @@ run_arm() {
 
   echo "[judge] band=${band} r=${r} (log: $judgelog)" | tee -a "$SUMMARY"
   DEVPROBE_TAGS=repprobe30_tags.json \
-    DEVPROBE_LORA_DIR="/mnt/local/cherry_out/devprobe/lora_ckptlink_band${band}_r${r}" \
+    DEVPROBE_LORA_DIR="out/devprobe/lora_ckptlink_band${band}_r${r}" \
     "$PY" probe/38_gemini_judge.py --set devprobe_lora > "$judgelog" 2>&1
   local jrc=$?
   if [ $jrc -ne 0 ]; then

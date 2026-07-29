@@ -49,7 +49,7 @@ import torch
 import torch.nn.functional as F
 from PIL import Image, ImageDraw
 
-MODEL = "/mnt/local/lumina2"
+MODEL = "models/lumina2"
 REFDIR = "/mnt/local/smoke_anime/anime_260623/img"
 OUT = "/home/ubuntu/chengyanli/items/cherry/out/lumina"
 os.makedirs(OUT, exist_ok=True)

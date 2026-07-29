@@ -23,7 +23,7 @@ source env.sh
 export REF=/mnt/local/smoke_anime/anime_260623/img   # same override probe/58 uses (env.sh default REF is dead)
 
 SUMMARY=data/ho30_band_replication_summary.txt
-mkdir -p /mnt/local/cherry_out/trainlight
+mkdir -p out/trainlight
 # APPEND (not truncate): the driver is resumable. A killed run's completed
 # arms are skipped via the judge-JSON existence check in run_arm, partially
 # generated arms resume via 46_devprobe's own existing-image skip, and the
@@ -34,9 +34,9 @@ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] GPU free at driver start=${free0}MiB" | t
 
 run_arm() {
   local label="$1" band="$2" r="$3" link="$4"
-  local genlog="/mnt/local/cherry_out/trainlight/ho30_${label}_gen.log"
-  local judgelog="/mnt/local/cherry_out/trainlight/ho30_${label}_judge.log"
-  local lora_dir="/mnt/local/cherry_out/devprobe/lora_$(basename "$link")"
+  local genlog="out/trainlight/ho30_${label}_gen.log"
+  local judgelog="out/trainlight/ho30_${label}_judge.log"
+  local lora_dir="out/devprobe/lora_$(basename "$link")"
   local outjson="data/gemini_judge_ho30_band_${band}_r${r}_step4000.json"
 
   echo "=== arm ${label} (band=${band} r=${r}) start $(date -u +%Y-%m-%dT%H:%M:%SZ) ===" | tee -a "$SUMMARY"
@@ -79,9 +79,9 @@ run_arm() {
   return 0
 }
 
-run_arm "early_0-15_r8"  "0-15"  8 "/mnt/local/cherry_out/trainlight/run_band_0-15_r8/ckptlink_ho30_band0-15_r8"
-run_arm "mid_10-25_r8"   "10-25" 8 "/mnt/local/cherry_out/trainlight/run_mix1/ckptlink_ho30_band10-25_r8"
-run_arm "late_14-29_r8"  "14-29" 8 "/mnt/local/cherry_out/trainlight/run_band_14-29_r8/ckptlink_ho30_band14-29_r8"
-run_arm "fulldepth_0-29_r4" "0-29" 4 "/mnt/local/cherry_out/trainlight/run_band_0-29_r4/ckptlink_ho30_band0-29_r4"
+run_arm "early_0-15_r8"  "0-15"  8 "out/trainlight/run_band_0-15_r8/ckptlink_ho30_band0-15_r8"
+run_arm "mid_10-25_r8"   "10-25" 8 "out/trainlight/run_mix1/ckptlink_ho30_band10-25_r8"
+run_arm "late_14-29_r8"  "14-29" 8 "out/trainlight/run_band_14-29_r8/ckptlink_ho30_band14-29_r8"
+run_arm "fulldepth_0-29_r4" "0-29" 4 "out/trainlight/run_band_0-29_r4/ckptlink_ho30_band0-29_r4"
 
 echo "=== all arms attempted, done $(date -u +%Y-%m-%dT%H:%M:%SZ) ===" | tee -a "$SUMMARY"

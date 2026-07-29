@@ -55,7 +55,7 @@ def main() -> int:
     args = parse_args()
     tsd = load_tsd()
     impl = tsd.load_impl()
-    os.environ.setdefault("ZBASE", "/mnt/local/yzh/models/Z-Image")
+    os.environ.setdefault("ZBASE", "models/Z-Image")
     os.environ.setdefault("REF", "/home/ubuntu/smoke_anime/revref_30k/img")
     kv = impl.load_base_probe()
     reference_paths = [

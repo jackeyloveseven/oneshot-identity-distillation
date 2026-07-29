@@ -147,7 +147,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--identity-model-path",
         default=(
-            "/mnt/local/cherry_out/trainlight/aux_models_cache/"
+            "out/trainlight/aux_models_cache/"
             "ccip_feat_simplified_bs4.onnx"
         ),
         help="fixed-batch simplified CCIP feature ONNX converted with onnx2torch",
@@ -1617,7 +1617,7 @@ def main() -> int:
         )
     support_layers = parse_layer_indices(args.support_layers)
 
-    os.environ.setdefault("ZBASE", "/mnt/local/yzh/models/Z-Image")
+    os.environ.setdefault("ZBASE", "models/Z-Image")
     os.environ.setdefault("REF", "/home/ubuntu/smoke_anime/revref_30k/img")
     impl = load_impl()
     kv = impl.load_base_probe()

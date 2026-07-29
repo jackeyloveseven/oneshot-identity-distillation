@@ -54,8 +54,8 @@ HOLDOUT_PROMPT = ('Image 1 is a REFERENCE anime character portrait. Image 2 is a
           '"note":"<=15 words"}')
 
 REF = "/mnt/local/smoke_anime/anime_260623/img/u{uid}_ref.png"
-MID = "/mnt/local/cherry_out/devprobe/base_rep30_step4000/u{uid}_lora_s0.png"
-FULLDEPTH = "/mnt/local/cherry_out/devprobe/lora_ckptlink_band0-29_r4/u{uid}_lora_s0.png"
+MID = "out/devprobe/base_rep30_step4000/u{uid}_lora_s0.png"
+FULLDEPTH = "out/devprobe/lora_ckptlink_band0-29_r4/u{uid}_lora_s0.png"
 
 
 def _key(var):

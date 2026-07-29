@@ -66,9 +66,9 @@ Run:
   source ../env.sh
   $PY 46_devprobe.py --stage build
   $PY 46_devprobe.py --stage gen --arm strip
-  $PY 46_devprobe.py --stage gen --arm lora --adapter /mnt/local/cherry_out/trainlight/run_full1/step_2000
+  $PY 46_devprobe.py --stage gen --arm lora --adapter out/trainlight/run_full1/step_2000
   $PY 38_gemini_judge.py --set devprobe_strip
-  DEVPROBE_LORA_DIR=/mnt/local/cherry_out/devprobe/lora_step_2000 $PY 38_gemini_judge.py --set devprobe_lora
+  DEVPROBE_LORA_DIR=out/devprobe/lora_step_2000 $PY 38_gemini_judge.py --set devprobe_lora
 """
 import os, sys, json, time, random, argparse, subprocess, importlib.util
 
@@ -86,8 +86,8 @@ TRIPLES_PATH = "/mnt/local/smoke_anime/training_triples.jsonl"
 EXCLUDE_JSON = os.path.join(DATA, "exclude_uids.json")
 MANIFEST_PATH = os.path.join(DATA, "train_manifest_7k5.jsonl")
 TAGS_JSON = os.path.join(DATA, os.environ.get("DEVPROBE_TAGS", "devprobe12_tags.json"))
-CONTACT_SHEET = "/mnt/local/cherry_out/trainlight/devprobe_refs.png"
-GEN_OUT_ROOT = "/mnt/local/cherry_out/devprobe"
+CONTACT_SHEET = "out/trainlight/devprobe_refs.png"
+GEN_OUT_ROOT = "out/devprobe"
 
 N_SUBJECTS = 12
 SAMPLE_SEED = 2025  # design §5.1: "新种子，不与 gen10 的 42、holdout30 的 2024 撞"
@@ -321,7 +321,7 @@ def stage_gen_lora(adapter):
 
     45's stage_sample writes to a fixed path
     OUT_DIR/sample_u{uid}_seed{seed}_adpt-{ckpt_basename}.png (its own
-    hardcoded OUT_DIR="/mnt/local/cherry_out/trainlight", tag scheme from its
+    hardcoded OUT_DIR="out/trainlight", tag scheme from its
     own source) -- this function moves each output to this project's
     devprobe/lora_{ckpt_name}/... layout afterward, it does not touch 45's
     output convention.
@@ -338,7 +338,7 @@ def stage_gen_lora(adapter):
 
     py = os.environ.get("PY", sys.executable)
     script45 = os.path.join(HERE, "45_train_lora.py")
-    TRAINLIGHT_OUT = "/mnt/local/cherry_out/trainlight"  # 45's own hardcoded OUT_DIR
+    TRAINLIGHT_OUT = "out/trainlight"  # 45's own hardcoded OUT_DIR
 
     t0 = time.time()
     for uid, seed in todo:

@@ -5,7 +5,7 @@ sheets comparing ref / strip-baseline / lora_step_{2000,4000,6000} for each
 of the 12 dev-probe subjects (data/devprobe12_tags.json, see
 probe/46_devprobe.py's docstring for how this 12-uid set was built), one
 sheet per seed. Read-only: this script only reads probe/46_devprobe's
-already-generated output under /mnt/local/cherry_out/devprobe/ and writes
+already-generated output under out/devprobe/ and writes
 two new PNGs; it never touches 46_devprobe.py or any other file.
 
 Layout per sheet: 12 rows (one per uid) x 5 image columns (ref, strip,
@@ -20,8 +20,8 @@ Run:
   /home/ubuntu/miniconda3/bin/python 47_m1_contact_sheet.py
 
 Output:
-  /mnt/local/cherry_out/trainlight/m1_compare_s0.png
-  /mnt/local/cherry_out/trainlight/m1_compare_s1.png
+  out/trainlight/m1_compare_s0.png
+  out/trainlight/m1_compare_s1.png
 """
 import os
 import json
@@ -33,8 +33,8 @@ DATA = os.path.join(HERE, "..", "data")
 
 TAGS_JSON = os.path.join(DATA, "devprobe12_tags.json")
 REF_IMG_DIR = "/mnt/local/smoke_anime/anime_260623/img"
-DEVPROBE_ROOT = "/mnt/local/cherry_out/devprobe"
-OUT_DIR = "/mnt/local/cherry_out/trainlight"
+DEVPROBE_ROOT = "out/devprobe"
+OUT_DIR = "out/trainlight"
 
 SEEDS = [0, 1]
 CELL = 256          # each image cell is CELL x CELL, white background

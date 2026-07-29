@@ -5,7 +5,7 @@ KREA_PYTHON=/mnt/local/krea2_edit_serve/venv/bin/python
 PROBE=/home/ubuntu/chengyanli/items/cherry/probe/115_krea2_identity_tsd.py
 IMAGE_ROOT=/mnt/local/smoke_anime/anime_260623/img
 OUT_DIR=/home/ubuntu/chengyanli/items/cherry/out/krea2_tsd_neutral
-LORA=/mnt/local/krea2_edit_serve/models/lora/krea2_identity_edit_v1_2.safetensors
+LORA=models/lora/krea2_identity_edit_v1_2.safetensors
 
 COMMON=(
   --lora-path "$LORA"

@@ -78,7 +78,7 @@ Output:
                                           for the full set and the kept subset.
 
 WD14 results are cached one JSON line per uid to
-/mnt/local/cherry_out/trainlight/wd14_target_cache.jsonl -- a rerun loads this
+out/trainlight/wd14_target_cache.jsonl -- a rerun loads this
 cache first and only calls the tagger for uids missing from it, so the script
 is resumable after an interruption (Ctrl-C, OOM, box reboot, ...). The cache
 file is opened in append mode and flushed+fsynced after every new line so a
@@ -104,7 +104,7 @@ MANIFEST_IN = os.path.join(DATA, "train_manifest_7k5.jsonl")
 MANIFEST_OUT = os.path.join(DATA, "train_manifest_7k5_clean.jsonl")
 REPORT_OUT = os.path.join(DATA, "manifest_clean_report.json")
 
-CACHE_DIR = "/mnt/local/cherry_out/trainlight"
+CACHE_DIR = "out/trainlight"
 CACHE_PATH = os.path.join(CACHE_DIR, "wd14_target_cache.jsonl")
 
 WD14_MODEL = "SwinV2_v3"

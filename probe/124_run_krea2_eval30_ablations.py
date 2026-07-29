@@ -7,18 +7,19 @@ import argparse
 import concurrent.futures
 import json
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
 
 
-ROOT = Path("/home/ubuntu/chengyanli/items/cherry")
-PYTHON = Path("/mnt/local/krea2_edit_serve/venv/bin/python")
+ROOT = Path(__file__).resolve().parents[1]
+PYTHON = Path(sys.executable)
 PROBE = ROOT / "probe" / "115_krea2_identity_tsd.py"
 PROTOCOL = ROOT / "data" / "krea2_eval30_protocol.json"
 OUT = ROOT / "out" / "krea2_tsd_eval30_ablations_v3"
-LORA = Path(
-    "/mnt/local/krea2_edit_serve/models/lora/"
+LORA = ROOT / (
+    "models/lora/"
     "krea2_identity_edit_v1_2.safetensors"
 )
 SEED = 2027

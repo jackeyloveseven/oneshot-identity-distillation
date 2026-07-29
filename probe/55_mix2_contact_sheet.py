@@ -9,7 +9,7 @@ eyeballing whether mix2 (the newer training mix) holds up on accessories /
 marks / species axes against mix1 (the earlier mix) at matching checkpoint
 steps. Read-only: this script only reads probe/46_devprobe's and the
 mix1/mix2 training runs' already-generated output under
-/mnt/local/cherry_out/devprobe/ and writes two new PNGs; it never touches
+out/devprobe/ and writes two new PNGs; it never touches
 47_m1_contact_sheet.py or any other script.
 
 This is a straight column-swap of probe/47_m1_contact_sheet.py: same
@@ -30,8 +30,8 @@ Run:
   /home/ubuntu/miniconda3/bin/python 55_mix2_contact_sheet.py
 
 Output:
-  /mnt/local/cherry_out/trainlight/mix2_compare_s0.png
-  /mnt/local/cherry_out/trainlight/mix2_compare_s1.png
+  out/trainlight/mix2_compare_s0.png
+  out/trainlight/mix2_compare_s1.png
 """
 import os
 import json
@@ -43,8 +43,8 @@ DATA = os.path.join(HERE, "..", "data")
 
 TAGS_JSON = os.path.join(DATA, "devprobe12_tags.json")
 REF_IMG_DIR = "/mnt/local/smoke_anime/anime_260623/img"
-DEVPROBE_ROOT = "/mnt/local/cherry_out/devprobe"
-OUT_DIR = "/mnt/local/cherry_out/trainlight"
+DEVPROBE_ROOT = "out/devprobe"
+OUT_DIR = "out/trainlight"
 
 SEEDS = [0, 1]
 CELL = 256          # each image cell is CELL x CELL, white background

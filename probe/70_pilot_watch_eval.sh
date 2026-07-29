@@ -17,7 +17,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 source env.sh
 export REF=/mnt/local/smoke_anime/anime_260623/img
-LOG=/mnt/local/cherry_out/trainlight
+LOG=out/trainlight
 WATCHLOG=$LOG/pilot_watch_eval.log
 MARKER=$LOG/_pilot_gate_eval_done
 STAMP(){ date -u +%Y-%m-%dT%H:%M:%SZ; }

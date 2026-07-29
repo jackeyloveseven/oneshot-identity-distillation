@@ -21,7 +21,7 @@ hallucinate an uncaptioned second character.
 
 WD14 tags for every one of the 5945 targets are already cached (produced by
 48_clean_manifest.py's run) at
-/mnt/local/cherry_out/trainlight/wd14_target_cache.jsonl -- one JSON line per
+out/trainlight/wd14_target_cache.jsonl -- one JSON line per
 uid, {"uid", "rating", "tags"}, where `tags` only carries the person-count
 tags (solo/1girl/1boy/2girls/2boys/multiple_girls/multiple_boys) at
 general_threshold=0.3. This script is READ-ONLY against that cache (all 5945
@@ -216,7 +216,7 @@ MANIFEST_IN = os.path.join(DATA, "train_manifest_7k5.jsonl")
 MANIFEST_OUT = os.path.join(DATA, "train_manifest_mix.jsonl")
 REPORT_OUT = os.path.join(DATA, "manifest_mix_report.json")
 
-CACHE_PATH = "/mnt/local/cherry_out/trainlight/wd14_target_cache.jsonl"
+CACHE_PATH = "out/trainlight/wd14_target_cache.jsonl"
 
 SOLO_THR = 0.5          # tags['solo'] >= this
 MULTI_THR = 0.35        # max(2girls,2boys,multiple_girls,multiple_boys) < this

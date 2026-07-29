@@ -31,7 +31,7 @@ source env.sh
 export REF=/mnt/local/smoke_anime/anime_260623/img   # env.sh default (revref_30k) is dead;
                                                        # not load-bearing for --stage train (rows
                                                        # carry absolute paths) but kept consistent.
-LOG=/mnt/local/cherry_out/trainlight
+LOG=out/trainlight
 mkdir -p "$LOG"
 MANIFEST=data/train_manifest_mix3.jsonl
 STAMP() { date -u +%Y-%m-%dT%H:%M:%SZ; }

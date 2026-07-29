@@ -47,8 +47,8 @@ import torch.nn.functional as F
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "..", "data")
-TRAINLIGHT = "/mnt/local/cherry_out/trainlight"
-DEVPROBE_ROOT = "/mnt/local/cherry_out/devprobe"
+TRAINLIGHT = "out/trainlight"
+DEVPROBE_ROOT = "out/devprobe"
 REF_IMG_DIR = "/mnt/local/smoke_anime/anime_260623/img"
 
 # env.sh's default REF (revref_30k) points at a directory that does not

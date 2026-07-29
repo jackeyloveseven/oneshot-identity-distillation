@@ -615,7 +615,7 @@ def decode_latent(kv, latent: torch.Tensor) -> Image.Image:
 
 @torch.inference_mode()
 def run(args: argparse.Namespace) -> tuple[Image.Image, dict[str, object]]:
-    os.environ.setdefault("ZBASE", "/mnt/local/yzh/models/Z-Image")
+    os.environ.setdefault("ZBASE", "models/Z-Image")
     os.environ.setdefault("REF", "/home/ubuntu/smoke_anime/revref_30k/img")
     kv = load_base_probe()
     paths = reference_paths(args, kv) if args.method != "prompt_only" else []

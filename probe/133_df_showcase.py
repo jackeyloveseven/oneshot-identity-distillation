@@ -20,7 +20,7 @@ from PIL import Image
 ROOT = Path("/home/ubuntu/chengyanli/items/cherry")
 PY = Path("/mnt/local/krea2_edit_serve/venv/bin/python")
 PROBE = ROOT / "probe" / "115_krea2_identity_tsd.py"
-LORA = Path("/mnt/local/krea2_edit_serve/models/lora/krea2_identity_edit_v1_2.safetensors")
+LORA = Path("models/lora/krea2_identity_edit_v1_2.safetensors")
 WH = Path("/home/ubuntu/datafactory_banked/pipe_single_image_notext")
 OUT = ROOT / "out" / "df_showcase_pilot"
 REFS = OUT / "refs"

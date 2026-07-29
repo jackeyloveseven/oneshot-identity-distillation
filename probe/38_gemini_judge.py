@@ -306,7 +306,7 @@ def devprobe_strip_pairs():
         if uid.startswith("_"):  # '_amendment' etc: top-level metadata, not a uid
             continue
         for s in [0, 1]:
-            p = f"/mnt/local/cherry_out/devprobe/strip/u{uid}_strip_s{s}.png"
+            p = f"out/devprobe/strip/u{uid}_strip_s{s}.png"
             if os.path.exists(p):
                 pairs.append((f"{uid}_strip_s{s}", f"{REF}/u{uid}_ref.png", p))
     return pairs
@@ -317,8 +317,8 @@ def devprobe_lora_pairs():
     specific checkpoint's generations. There is no single canonical lora
     checkpoint directory -- caller MUST set DEVPROBE_LORA_DIR to the
     checkpoint's devprobe output dir (probe/46_devprobe.py --stage gen --arm
-    lora writes to /mnt/local/cherry_out/devprobe/lora_<ckpt_name>/), e.g.:
-      DEVPROBE_LORA_DIR=/mnt/local/cherry_out/devprobe/lora_step_2000 \\
+    lora writes to out/devprobe/lora_<ckpt_name>/), e.g.:
+      DEVPROBE_LORA_DIR=out/devprobe/lora_step_2000 \\
         $PY 38_gemini_judge.py --set devprobe_lora
     pid embeds the checkpoint name (from DEVPROBE_LORA_DIR's basename) so
     that if this --set is re-run across multiple checkpoints and the output

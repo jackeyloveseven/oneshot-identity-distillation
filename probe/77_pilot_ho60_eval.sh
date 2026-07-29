@@ -23,8 +23,8 @@ source env.sh
 export REF=/mnt/local/smoke_anime/anime_260623/img
 export DEVPROBE_TAGS=holdout30_tags.json
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-TL=/mnt/local/cherry_out/trainlight
-DP=/mnt/local/cherry_out/devprobe
+TL=out/trainlight
+DP=out/devprobe
 LOG=$TL/ho60_eval; mkdir -p "$LOG"
 ARMS=(baseline ccip perc)
 
